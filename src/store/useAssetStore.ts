@@ -21,7 +21,7 @@ interface AssetStore {
   indices: Record<string, number>;
   isLoading: boolean;
   fetchAssets: () => Promise<void>;
-  addAsset: (asset: Omit<Asset, 'id'>) => Promise<void>;
+  addAsset: (asset: Omit<Asset, 'id' | 'createdAt'>) => Promise<void>;
   removeAsset: (id: string) => Promise<void>;
   updateAsset: (id: string, updates: Partial<Asset>) => Promise<void>;
   setIndices: (indices: Record<string, number>) => void;
