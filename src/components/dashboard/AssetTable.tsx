@@ -39,20 +39,16 @@ export function AssetTable() {
   const pendingAssets = sortedAssets.filter(asset => !reachedAssets.find(r => r.id === asset.id));
 
   return (
-    <div className="flex-1 p-6 flex flex-col gap-12 max-w-7xl mx-auto w-full">
+    <div className="flex-1 p-6 flex flex-col gap-6 max-w-7xl mx-auto w-full">
       <AddAssetModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
       />
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-zinc-900/40 p-8 rounded-[3rem] border border-white/5 backdrop-blur-xl shadow-2xl gap-6">
-        <div>
-          <h1 className="text-4xl font-black text-zinc-100 tracking-tighter uppercase italic">VarlıklarIM</h1>
-          <div className="flex items-center gap-3 mt-2">
-            <p className="text-xs text-zinc-500 font-bold uppercase tracking-[0.2em] opacity-50 flex items-center gap-2">
-              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-              Terminal Live v1.0
-            </p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-zinc-900/40 p-6 rounded-[2rem] border border-white/5 backdrop-blur-xl shadow-2xl gap-4">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-black text-zinc-100 tracking-tighter uppercase italic">VarlıklarIM</h1>
             <button 
               onClick={() => triggerRefresh()}
               className="px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-full text-[10px] font-black text-zinc-400 hover:text-white transition-all uppercase tracking-widest flex items-center gap-2 active:scale-95"

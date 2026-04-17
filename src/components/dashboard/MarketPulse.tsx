@@ -36,7 +36,7 @@ export function MarketPulse() {
   };
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
+    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
       {INDEX_CONFIG.map((cfg) => {
         const data = indices[cfg.symbol];
         const targetData = indexTargets[cfg.symbol];
@@ -71,7 +71,7 @@ export function MarketPulse() {
               <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{cfg.label}</span>
               <div className="flex items-center gap-2">
                 <span className={cn(
-                  "text-lg font-mono font-black px-3 py-1.5 rounded-xl tracking-tighter",
+                  "text-lg font-mono font-black px-3 py-1 rounded-xl tracking-tighter",
                   data.change >= 0 ? "text-emerald-400 bg-emerald-400/10" : "text-red-400 bg-red-400/10"
                 )}>
                   {data.change >= 0 ? '+' : ''}{data.change.toFixed(2)}%
