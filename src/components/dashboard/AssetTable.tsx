@@ -174,10 +174,10 @@ function AssetCard({ asset, removeAsset, isReached = false }: any) {
             </span>
             {asset.dailyChange !== undefined && (
               <span className={cn(
-                "text-[10px] font-black px-2 py-1 rounded-lg flex items-center gap-1 min-w-[50px] justify-center",
+                "text-2xl font-mono font-black px-3 py-1 rounded-xl flex items-center gap-1 min-w-[100px] justify-center",
                 asset.dailyChange >= 0 ? "text-emerald-400 bg-emerald-400/10" : "text-red-400 bg-red-400/10"
               )}>
-                {asset.dailyChange >= 0 ? "↑" : "↓"} {Math.abs(asset.dailyChange).toFixed(2)}%
+                {asset.dailyChange >= 0 ? "+" : "-"}%{Math.abs(asset.dailyChange).toFixed(2)}
               </span>
             )}
           </div>
