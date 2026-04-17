@@ -32,6 +32,11 @@ export function AddAssetModal({ isOpen, onClose }: AddAssetModalProps) {
     // Akıllı Sembol Düzeltmesi
     let finalSymbol = formData.symbol.toUpperCase().trim();
     
+    // BIST için yaygın hata düzeltmesi (0 yerine O harfi)
+    if (formData.type === 'BIST') {
+      finalSymbol = finalSymbol.replace(/0/g, 'O');
+    }
+    
     // BIST Düzeltmesi (.IS ekleme)
     if (formData.type === 'BIST' && !finalSymbol.endsWith('.IS')) {
       finalSymbol += '.IS';
