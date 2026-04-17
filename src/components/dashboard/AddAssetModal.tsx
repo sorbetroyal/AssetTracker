@@ -49,7 +49,7 @@ export function AddAssetModal({ isOpen, onClose }: AddAssetModalProps) {
 
     addAsset({
       symbol: finalSymbol,
-      name: finalSymbol,
+      name: finalSymbol === 'GC=F' ? 'ALTIN (ONS)' : finalSymbol === 'SI=F' ? 'GÜMÜŞ (ONS)' : finalSymbol,
       type: formData.type,
       strategy: formData.strategy,
       entryPrice: 0,
@@ -135,16 +135,16 @@ export function AddAssetModal({ isOpen, onClose }: AddAssetModalProps) {
                       <button
                         type="button"
                         onClick={() => setFormData({ ...formData, symbol: 'GC=F', currency: '$' })}
-                        className="text-[9px] font-black bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-1 rounded-md hover:bg-amber-500 hover:text-black transition-all"
+                        className="text-[10px] font-black bg-amber-500/10 text-amber-500 border border-amber-500/20 px-3 py-1.5 rounded-xl hover:bg-amber-500 hover:text-black transition-all"
                       >
-                        ALTIN (GC=F)
+                        ALTIN
                       </button>
                       <button
                         type="button"
                         onClick={() => setFormData({ ...formData, symbol: 'SI=F', currency: '$' })}
-                        className="text-[9px] font-black bg-zinc-400/10 text-zinc-400 border border-zinc-400/20 px-2 py-1 rounded-md hover:bg-zinc-100 hover:text-black transition-all"
+                        className="text-[10px] font-black bg-zinc-400/10 text-zinc-400 border border-zinc-400/20 px-3 py-1.5 rounded-xl hover:bg-zinc-100 hover:text-black transition-all"
                       >
-                        GÜMÜŞ (SI=F)
+                        GÜMÜŞ
                       </button>
                     </motion.div>
                   )}
