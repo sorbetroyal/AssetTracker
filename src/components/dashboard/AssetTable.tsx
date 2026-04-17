@@ -49,7 +49,7 @@ export function AssetTable() {
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-4">
             <h1 className="text-3xl font-black text-zinc-100 tracking-tighter italic leading-none">Hedef Takip</h1>
-            <div className="flex flex-col items-start gap-1">
+            <div className="flex items-center gap-4">
               <button 
                 onClick={() => triggerRefresh()}
                 className="px-4 py-1.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-sm font-black text-zinc-300 hover:text-white transition-all uppercase tracking-widest flex items-center gap-2 active:scale-95 shadow-lg"
@@ -60,7 +60,7 @@ export function AssetTable() {
                 GÜNCELLE
               </button>
               {lastUpdated && (
-                <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1 opacity-70">
+                <span className="text-xs font-black text-zinc-400 uppercase tracking-widest">
                   SON GÜNCELLEME: {lastUpdated}
                 </span>
               )}
