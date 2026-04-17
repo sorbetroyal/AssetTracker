@@ -5,7 +5,7 @@ export function usePriceData() {
   const { assets, updateAsset, updateIndices, refreshCount } = useAssetStore();
 
   const fetchPrices = useCallback(async () => {
-    const indexSymbols = ['XU100.IS', 'XU030.IS', '^GSPC', '^IXIC'];
+    const indexSymbols = ['XU100.IS', 'XU030.IS', 'USDTRY=X', '^GSPC', '^IXIC'];
     const assetSymbols = assets.map(a => a.symbol);
     const allSymbols = Array.from(new Set([...indexSymbols, ...assetSymbols]));
     

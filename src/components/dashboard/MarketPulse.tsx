@@ -12,6 +12,7 @@ function cn(...inputs: ClassValue[]) {
 const INDEX_CONFIG = [
   { symbol: 'XU100.IS', label: 'BIST 100', currency: '₺' },
   { symbol: 'XU030.IS', label: 'BIST 30', currency: '₺' },
+  { symbol: 'USDTRY=X', label: 'DOLAR/TL', currency: '₺' },
   { symbol: '^GSPC', label: 'S&P 500', currency: '$' },
   { symbol: '^IXIC', label: 'NASDAQ', currency: '$' }
 ];
@@ -35,7 +36,7 @@ export function MarketPulse() {
   };
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
       {INDEX_CONFIG.map((cfg) => {
         const data = indices[cfg.symbol];
         const targetData = indexTargets[cfg.symbol];
