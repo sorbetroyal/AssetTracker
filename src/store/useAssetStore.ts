@@ -23,7 +23,9 @@ interface AssetStore {
   indexTargets: Record<string, { targetPrice: number; strategy: string }>;
   isLoading: boolean;
   refreshCount: number;
+  lastUpdated: string | null;
   triggerRefresh: () => void;
+  setLastUpdated: (time: string) => void;
   fetchAssets: () => Promise<void>;
   addAsset: (asset: Omit<Asset, 'id' | 'createdAt'>) => Promise<void>;
   removeAsset: (id: string) => Promise<void>;
@@ -41,7 +43,9 @@ export const useAssetStore = create<AssetStore>()(
       indexTargets: {},
       isLoading: false,
       refreshCount: 0,
+      lastUpdated: null,
       triggerRefresh: () => set((state) => ({ refreshCount: state.refreshCount + 1 })),
+      setLastUpdated: (time) => set({ lastUpdated: time }),
       updateIndices: (symbol, data) => set((state) => ({
         indices: { ...state.indices, [symbol]: data }
       })),

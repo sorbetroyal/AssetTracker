@@ -2,7 +2,7 @@ import { useEffect, useCallback } from 'react';
 import { useAssetStore } from '@/store/useAssetStore';
 
 export function usePriceData() {
-  const { assets, updateAsset, updateIndices, refreshCount } = useAssetStore();
+  const { assets, updateAsset, updateIndices, refreshCount, setLastUpdated } = useAssetStore();
 
   const fetchPrices = useCallback(async () => {
     const indexSymbols = ['XU100.IS', 'XU030.IS', 'USDTRY=X', '^GSPC', '^IXIC'];
@@ -44,11 +44,18 @@ export function usePriceData() {
             });
           }
         });
+
+        // Veri geldiğinde güncelleme zamanını kaydet
+        setLastUpdated(new Date().toLocaleTimeString('tr-TR', { 
+          hour: '2-digit', 
+          minute: '2-digit', 
+          second: '2-digit' 
+        }));
       }
     } catch (error) {
       console.error('Price update failed:', error);
     }
-  }, [assets, updateAsset, updateIndices]);
+  }, [assets, updateAsset, updateIndices, setLastUpdated]);
 
   useEffect(() => {
     fetchPrices();

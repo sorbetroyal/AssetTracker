@@ -14,7 +14,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export function AssetTable() {
-  const { assets, removeAsset, triggerRefresh } = useAssetStore();
+  const { assets, removeAsset, triggerRefresh, lastUpdated } = useAssetStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Varlıkları hedefe yakınlığa göre sıralayalım (4S Kapanışını önceliklendirerek)
@@ -49,15 +49,22 @@ export function AssetTable() {
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-4">
             <h1 className="text-3xl font-black text-zinc-100 tracking-tighter italic leading-none">Hedef Takip</h1>
-            <button 
-              onClick={() => triggerRefresh()}
-              className="px-4 py-1.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-sm font-black text-zinc-300 hover:text-white transition-all uppercase tracking-widest flex items-center gap-2 active:scale-95 shadow-lg mt-0.5"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              GÜNCELLE
-            </button>
+            <div className="flex flex-col items-start gap-1">
+              <button 
+                onClick={() => triggerRefresh()}
+                className="px-4 py-1.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-sm font-black text-zinc-300 hover:text-white transition-all uppercase tracking-widest flex items-center gap-2 active:scale-95 shadow-lg"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                GÜNCELLE
+              </button>
+              {lastUpdated && (
+                <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1 opacity-70">
+                  SON GÜNCELLEME: {lastUpdated}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         
