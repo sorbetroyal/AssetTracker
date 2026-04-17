@@ -2,9 +2,10 @@ import { useEffect, useCallback } from 'react';
 import { useAssetStore } from '@/store/useAssetStore';
 
 export function usePriceData() {
-  const { assets, updateAsset, updateIndices, refreshCount, setLastUpdated } = useAssetStore();
+  const { updateAsset, updateIndices, refreshCount, setLastUpdated } = useAssetStore();
 
   const fetchPrices = useCallback(async () => {
+    const assets = useAssetStore.getState().assets;
     const indexSymbols = ['XU100.IS', 'XU030.IS', 'USDTRY=X', '^GSPC', '^IXIC'];
     const assetSymbols = assets.map(a => a.symbol);
     const allSymbols = Array.from(new Set([...indexSymbols, ...assetSymbols]));
@@ -22,7 +23,6 @@ export function usePriceData() {
 
       if (Array.isArray(data)) {
         data.forEach((item: any) => {
-          // Eğer bir endeks ise
           if (indexSymbols.includes(item.symbol)) {
             updateIndices(item.symbol, {
               price: item.price,
@@ -31,7 +31,6 @@ export function usePriceData() {
             });
           }
 
-          // Eğer bir varlık ise (Endeksler varlık da olabilir, o yüzden if/else yapmadık)
           const matchingAssets = assets.filter(a => a.symbol === item.symbol);
           if (matchingAssets.length > 0) {
             matchingAssets.forEach(asset => {
@@ -45,7 +44,6 @@ export function usePriceData() {
           }
         });
 
-        // Veri geldiğinde güncelleme zamanını kaydet
         setLastUpdated(new Date().toLocaleTimeString('tr-TR', { 
           hour: '2-digit', 
           minute: '2-digit', 
@@ -55,11 +53,11 @@ export function usePriceData() {
     } catch (error) {
       console.error('Price update failed:', error);
     }
-  }, [assets, updateAsset, updateIndices, setLastUpdated]);
+  }, [updateAsset, updateIndices, setLastUpdated]);
 
   useEffect(() => {
     fetchPrices();
-    const interval = setInterval(fetchPrices, 30000); // 30 saniyede bir güncelle
+    const interval = setInterval(fetchPrices, 60000); // 1 dakikada bir güncelle
     return () => clearInterval(interval);
   }, [fetchPrices, refreshCount]);
 
