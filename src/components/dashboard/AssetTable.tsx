@@ -17,11 +17,11 @@ export function AssetTable() {
   const { assets, removeAsset, triggerRefresh } = useAssetStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Varlıkları hedefe yakınlığa göre sıralayalım
+  // Varlıkları hedefe yakınlığa göre sıralayalım (4S Kapanışını önceliklendirerek)
   const getProximity = (asset: any) => {
-    const current = asset.currentPrice || asset.entryPrice || 0;
-    if (current === 0 || asset.targetPrice === 0) return Infinity;
-    return Math.abs((current - asset.targetPrice) / asset.targetPrice);
+    const reference = asset.last4hPrice || asset.currentPrice || asset.entryPrice || 0;
+    if (reference === 0 || asset.targetPrice === 0) return Infinity;
+    return Math.abs((reference - asset.targetPrice) / asset.targetPrice);
   };
 
   const sortedAssets = [...assets].sort((a, b) => getProximity(a) - getProximity(b));
