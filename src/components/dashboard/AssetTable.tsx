@@ -168,13 +168,13 @@ function AssetCard({ asset, removeAsset, isReached = false }: any) {
         </div>
         
         <div className="text-right flex flex-col items-end gap-1">
-          <div className="flex flex-col items-end">
-            <span className="text-2xl font-mono font-black text-zinc-100 bg-zinc-800/20 px-4 py-2 rounded-2xl border border-white/5 shadow-inner">
+          <div className="flex items-center gap-3 bg-zinc-800/20 p-2 rounded-2xl border border-white/5 shadow-inner">
+            <span className="text-2xl font-mono font-black text-zinc-100">
               {asset.currency}{asset.currentPrice?.toLocaleString()}
             </span>
             {asset.dailyChange !== undefined && (
               <span className={cn(
-                "text-[10px] font-black mt-2 px-2 py-0.5 rounded-md flex items-center gap-1",
+                "text-[10px] font-black px-2 py-1 rounded-lg flex items-center gap-1 min-w-[50px] justify-center",
                 asset.dailyChange >= 0 ? "text-emerald-400 bg-emerald-400/10" : "text-red-400 bg-red-400/10"
               )}>
                 {asset.dailyChange >= 0 ? "↑" : "↓"} {Math.abs(asset.dailyChange).toFixed(2)}%
