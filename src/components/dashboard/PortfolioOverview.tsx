@@ -156,35 +156,35 @@ export function PortfolioOverview() {
 
               return (
                 <div key={type} className="bg-zinc-900/40 border border-white/5 p-5 rounded-[2rem] flex flex-col sm:flex-row sm:items-center justify-between hover:bg-zinc-900/80 transition-all group relative overflow-hidden gap-6 px-10">
-                  <div className="flex items-center gap-5">
-                    <div className="text-3xl font-black text-white italic tracking-tighter flex items-center gap-4">
-                      {type}
-                      <span className="text-[10px] font-black text-blue-500/60 uppercase bg-blue-500/5 px-2.5 py-1 rounded-lg border border-blue-500/10 not-italic tracking-[0.2em]">
-                        {data.amount} VARLIK
-                      </span>
-                    </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-5">
+                  <div className="text-xl md:text-3xl font-black text-white italic tracking-tighter flex items-center gap-3">
+                    {type}
+                    <span className="text-[9px] md:text-[10px] font-black text-blue-500/60 uppercase bg-blue-500/5 px-2 py-0.5 md:px-2.5 md:py-1 rounded-lg border border-blue-500/10 not-italic tracking-widest">
+                      {data.amount} VRLK
+                    </span>
                   </div>
+                </div>
 
-                  <div className="flex flex-1 justify-between sm:justify-end items-center gap-8 md:gap-14">
-                    <div className="text-left sm:text-right">
-                      <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1.5 leading-none">Günlük Getiri (Net)</div>
-                      <div className={cn("text-xl font-black italic tracking-tighter leading-none flex items-baseline justify-between gap-4", data.dailyGain >= 0 ? "text-emerald-500" : "text-red-500")}>
-                        <span>{data.dailyGain >= 0 ? '+' : ''}₺{data.dailyGain.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        <span className="text-lg opacity-80 font-black italic">{`(${data.dailyGain >= 0 ? '+' : ''}${dailyPercent.toFixed(2)}%)`}</span>
-                      </div>
-                    </div>
-                    <div className="text-left sm:text-right">
-                      <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1.5 leading-none">Toplam Kar/Zarar</div>
-                      <div className={cn("text-xl font-black italic tracking-tighter leading-none flex items-baseline justify-between gap-4", data.totalGain >= 0 ? "text-emerald-500" : "text-red-500")}>
-                        <span>{data.totalGain >= 0 ? '+' : ''}₺{data.totalGain.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        <span className="text-lg opacity-80 font-black italic">{`(${data.totalGain >= 0 ? '+' : ''}${pnlPercent.toFixed(2)}%)`}</span>
-                      </div>
-                    </div>
-                    <div className="text-right min-w-[120px]">
-                      <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 leading-none opacity-40">Kategori Toplam Değeri</div>
-                      <div className="text-3xl font-black text-white italic tracking-tighter leading-none">₺{data.totalValue.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <div className="grid grid-cols-2 sm:flex sm:flex-1 justify-between sm:justify-end items-center gap-4 sm:gap-8 md:gap-14">
+                  <div className="text-left sm:text-right">
+                    <div className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1 leading-none">Günlük (Net)</div>
+                    <div className={cn("text-base md:text-xl font-black italic tracking-tighter leading-none flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4", data.dailyGain >= 0 ? "text-emerald-500" : "text-red-500")}>
+                      <span>{data.dailyGain >= 0 ? '+' : ''}₺{data.dailyGain.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span className="text-sm md:text-lg opacity-80 font-black italic">{`(${data.dailyGain >= 0 ? '+' : ''}${dailyPercent.toFixed(2)}%)`}</span>
                     </div>
                   </div>
+                  <div className="text-left sm:text-right">
+                    <div className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1 leading-none">Toplam K/Z</div>
+                    <div className={cn("text-base md:text-xl font-black italic tracking-tighter leading-none flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4", data.totalGain >= 0 ? "text-emerald-500" : "text-red-500")}>
+                      <span>{data.totalGain >= 0 ? '+' : ''}₺{data.totalGain.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span className="text-sm md:text-lg opacity-80 font-black italic">{`(${data.totalGain >= 0 ? '+' : ''}${pnlPercent.toFixed(2)}%)`}</span>
+                    </div>
+                  </div>
+                  <div className="text-left sm:text-right col-span-2 sm:col-auto sm:min-w-[120px] pt-2 sm:pt-0 border-t border-white/5 sm:border-0 mt-2 sm:mt-0">
+                    <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 leading-none opacity-40">Toplam Değer</div>
+                    <div className="text-xl md:text-3xl font-black text-white italic tracking-tighter leading-none">₺{data.totalValue.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                  </div>
+                </div>
                 </div>
               );
             })}
@@ -195,8 +195,8 @@ export function PortfolioOverview() {
         <div className="flex flex-col gap-6">
           <div className="flex justify-between items-end px-2">
             <div className="flex items-center gap-3">
-              <div className="w-1.5 h-8 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
-              <h2 className="text-3xl font-black text-white italic tracking-tighter">Varlıklar</h2>
+              <div className="w-1 h-6 md:w-1.5 md:h-8 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+              <h2 className="text-xl md:text-3xl font-black text-white italic tracking-tighter uppercase">Varlıklar</h2>
             </div>
           </div>
           <div className="grid grid-cols-1 gap-4">
@@ -252,18 +252,18 @@ function AccountSummaryItem({ data, onDelete }: { data: any, onDelete: () => voi
       <div className="flex flex-1 justify-between sm:justify-end items-center gap-8 md:gap-14">
         <div className="text-left sm:text-right">
           <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1.5 leading-none">Günlük Getiri (Net)</div>
-          <div className={cn("text-xl font-black italic tracking-tighter leading-none flex items-baseline justify-between gap-4", dailyGain >= 0 ? "text-emerald-500" : "text-red-500")}>
+          <div className={cn("text-base md:text-xl font-black italic tracking-tighter leading-none flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4", dailyGain >= 0 ? "text-emerald-500" : "text-red-500")}>
             <span>{dailyGain >= 0 ? '+' : ''}₺{dailyGain.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span className="text-lg opacity-80 font-black italic">
+            <span className="text-sm md:text-lg opacity-80 font-black italic">
               {`(${dailyGain >= 0 ? '+' : ''}${dailyPercent.toFixed(2)}%)`}
             </span>
           </div>
         </div>
         <div className="text-left sm:text-right">
           <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1.5 leading-none">Toplam Kar/Zarar</div>
-          <div className={cn("text-xl font-black italic tracking-tighter leading-none flex items-baseline justify-between gap-4", totalGain >= 0 ? "text-emerald-500" : "text-red-500")}>
+          <div className={cn("text-base md:text-xl font-black italic tracking-tighter leading-none flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4", totalGain >= 0 ? "text-emerald-500" : "text-red-500")}>
             <span>{totalGain >= 0 ? '+' : ''}₺{totalGain.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span className="text-lg opacity-80 font-black italic">
+            <span className="text-sm md:text-lg opacity-80 font-black italic">
               {`(${totalGain >= 0 ? '+' : ''}${pnlPercent.toFixed(2)}%)`}
             </span>
           </div>
@@ -305,22 +305,22 @@ function PortfolioListItem({ item, onDelete, isInvestment }: { item: PortfolioIt
 
       <div className="flex flex-1 justify-between sm:justify-end items-center gap-8 md:gap-14">
         <div className="text-left sm:text-right">
-          <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1.5 leading-none">Günlük Getiri (Net)</div>
-          <div className={cn("text-xl font-black italic tracking-tighter leading-none flex items-baseline justify-between gap-4", dailyGainVal >= 0 ? "text-emerald-500" : "text-red-500")}>
+          <div className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1 leading-none">Günlük Getiri</div>
+          <div className={cn("text-base md:text-xl font-black italic tracking-tighter leading-none flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4", dailyGainVal >= 0 ? "text-emerald-500" : "text-red-500")}>
             <span>{dailyGainVal >= 0 ? '+' : ''}₺{dailyGainVal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span className="text-lg opacity-80 font-black italic">{`(${dailyGainVal >= 0 ? '+' : ''}${dailyPercent.toFixed(2)}%)`}</span>
+            <span className="text-sm md:text-lg opacity-80 font-black italic">{`(${dailyGainVal >= 0 ? '+' : ''}${dailyPercent.toFixed(2)}%)`}</span>
           </div>
         </div>
         <div className="text-left sm:text-right">
-          <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1.5 leading-none">Toplam Kar/Zarar</div>
-          <div className={cn("text-xl font-black italic tracking-tighter leading-none flex items-baseline justify-between gap-4", totalPnl >= 0 ? "text-emerald-500" : "text-red-500")}>
+          <div className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1 leading-none">Toplam K/Z</div>
+          <div className={cn("text-base md:text-xl font-black italic tracking-tighter leading-none flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4", totalPnl >= 0 ? "text-emerald-500" : "text-red-500")}>
             <span>{totalPnl >= 0 ? '+' : ''}₺{totalPnl.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span className="text-lg opacity-80 font-black italic">{`(${totalPnl >= 0 ? '+' : ''}${totalPnlPercent.toFixed(2)}%)`}</span>
+            <span className="text-sm md:text-lg opacity-80 font-black italic">{`(${totalPnl >= 0 ? '+' : ''}${totalPnlPercent.toFixed(2)}%)`}</span>
           </div>
         </div>
-        <div className="text-right min-w-[120px]">
-          <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 leading-none opacity-40">Toplam Değer</div>
-          <div className="text-3xl font-black text-white italic tracking-tighter leading-none">₺{value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        <div className="text-left sm:text-right pt-2 sm:pt-0 border-t border-white/5 sm:border-0 mt-2 sm:mt-0">
+          <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 leading-none opacity-40 text-right">Toplam Değer</div>
+          <div className="text-xl md:text-3xl font-black text-white italic tracking-tighter leading-none text-right">₺{value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
       </div>
 
