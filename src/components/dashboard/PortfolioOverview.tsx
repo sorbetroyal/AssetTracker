@@ -303,7 +303,7 @@ function PortfolioListItem({ item, onDelete, isInvestment }: { item: PortfolioIt
         </div>
       </div>
 
-      <div className="flex flex-1 justify-between sm:justify-end items-center gap-8 md:gap-14">
+      <div className="grid grid-cols-2 sm:flex sm:flex-1 justify-between sm:justify-end items-center gap-4 sm:gap-8 md:gap-14">
         <div className="text-left sm:text-right">
           <div className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1 leading-none">Günlük Getiri</div>
           <div className={cn("text-base md:text-xl font-black italic tracking-tighter leading-none flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4", dailyGainVal >= 0 ? "text-emerald-500" : "text-red-500")}>
@@ -318,7 +318,7 @@ function PortfolioListItem({ item, onDelete, isInvestment }: { item: PortfolioIt
             <span className="text-sm md:text-lg opacity-80 font-black italic">{`(${totalPnl >= 0 ? '+' : ''}${totalPnlPercent.toFixed(2)}%)`}</span>
           </div>
         </div>
-        <div className="text-left sm:text-right pt-2 sm:pt-0 border-t border-white/5 sm:border-0 mt-2 sm:mt-0">
+        <div className="text-left sm:text-right col-span-2 sm:col-auto sm:min-w-[120px] pt-2 sm:pt-0 border-t border-white/5 sm:border-0 mt-2 sm:mt-0">
           <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 leading-none opacity-40 text-right">Toplam Değer</div>
           <div className="text-xl md:text-3xl font-black text-white italic tracking-tighter leading-none text-right">₺{value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
