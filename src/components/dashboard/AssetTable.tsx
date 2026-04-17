@@ -144,15 +144,29 @@ export function AssetTable() {
 
 // Yardımcı Kart Bileşeni
 function AssetCard({ asset, removeAsset, isReached = false }: any) {
+  const reference = asset.last4hPrice || asset.currentPrice || asset.entryPrice || 0;
+  const proximity = reference === 0 || asset.targetPrice === 0 ? Infinity : Math.abs((reference - asset.targetPrice) / asset.targetPrice);
+  const isCritical = !isReached && proximity < 0.01; // %1'den yakın
+  const isLossStrat = asset.strategy === 'Zarar Kes';
+
   return (
     <div 
       className={cn(
         "bg-zinc-900/50 border border-zinc-800 p-10 rounded-[2.5rem] hover:border-zinc-500 transition-all group relative overflow-hidden shadow-2xl",
-        isReached && "border-emerald-500/40 bg-emerald-500/[0.03] animate-pulse-subtle"
+        isReached && "border-emerald-500/40 bg-emerald-500/[0.03] animate-pulse-subtle",
+        isCritical && isLossStrat && "border-red-500/60 shadow-[0_0_50px_rgba(239,68,68,0.25)] animate-pulse duration-[2000ms] ring-1 ring-red-500/20",
+        isCritical && !isLossStrat && "border-emerald-500/60 shadow-[0_0_50px_rgba(16,185,129,0.25)] animate-pulse duration-[2000ms] ring-1 ring-emerald-500/20"
       )}
     >
       {isReached && (
         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 via-transparent to-emerald-500/10 animate-pulse duration-[3000ms] pointer-events-none" />
+      )}
+      
+      {isCritical && !isReached && (
+        <div className={cn(
+          "absolute inset-0 opacity-10 pointer-events-none",
+          isLossStrat ? "bg-gradient-to-tr from-red-500 via-transparent to-red-500" : "bg-gradient-to-tr from-emerald-500 via-transparent to-emerald-500"
+        )} />
       )}
 
       {/* Glossy Background Effect */}
@@ -169,7 +183,7 @@ function AssetCard({ asset, removeAsset, isReached = false }: any) {
 
       <div className="flex justify-between items-start mb-10 pr-12 relative z-10">
         <div>
-          <div className="flex gap-2.5 mb-4">
+          <div className="flex gap-2.5 mb-4 items-center">
             <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest bg-zinc-800 px-3 py-1.5 rounded-lg border border-white/5">
               {asset.type}
             </span>
@@ -182,13 +196,21 @@ function AssetCard({ asset, removeAsset, isReached = false }: any) {
             )}>
               {asset.strategy}
             </span>
+            {isCritical && !isReached && (
+              <span className={cn(
+                "text-[9px] font-[1000] px-3 py-1.5 rounded-lg animate-pulse tracking-tighter ring-1",
+                isLossStrat ? "bg-red-500/40 text-white ring-red-400/50" : "bg-emerald-500/40 text-black ring-emerald-400/50"
+              )}>
+                ⚠️ KRİTİK BÖLGE
+              </span>
+            )}
             {isReached && (
               <span className="bg-gradient-to-r from-emerald-500 to-emerald-400 text-black text-[11px] font-[1000] px-4 py-1.5 rounded-xl shadow-[0_0_30px_rgba(16,185,129,0.7)] animate-bounce tracking-tighter ring-2 ring-emerald-300/20">
                 🚀 HEDEF GELDİ!
               </span>
             )}
           </div>
-          <h3 className="text-4xl font-black text-zinc-100 group-hover:text-emerald-400 transition-all tracking-tighter uppercase italic">
+          <h3 className="text-4xl font-black text-zinc-100 group-hover:text-zinc-50 transition-all tracking-tighter uppercase italic">
             {asset.symbol === 'GC=F' ? 'ALTIN' : 
              asset.symbol === 'SI=F' ? 'GÜMÜŞ' : 
              asset.symbol.replace('.IS', '').replace('-USD', '')}
@@ -212,10 +234,15 @@ function AssetCard({ asset, removeAsset, isReached = false }: any) {
               </span>
             )}
           </div>
-          {isReached && (
-             <div className="flex flex-col items-end px-2 mt-3 opacity-80">
-                <span className="text-xs font-black text-zinc-500 uppercase tracking-widest mb-1">HEDEFLENEN</span>
-                <span className="text-xl font-mono font-black text-emerald-400 tracking-tighter">
+          {(isReached || isCritical) && (
+             <div className="flex flex-col items-end px-2 mt-3 opacity-90">
+                <span className="text-xs font-black text-zinc-500 uppercase tracking-widest mb-1">
+                  {isReached ? 'HEDEFLENEN' : 'KRİTİK HEDEF'}
+                </span>
+                <span className={cn(
+                  "text-xl font-mono font-black tracking-tighter",
+                  isLossStrat ? "text-red-400" : "text-emerald-400"
+                )}>
                    {asset.currency}{asset.targetPrice.toLocaleString()}
                 </span>
              </div>
