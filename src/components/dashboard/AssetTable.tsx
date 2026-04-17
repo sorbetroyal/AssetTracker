@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAssetStore } from '@/store/useAssetStore';
 import { ProximityBar } from './ProximityBar';
 import { AddAssetModal } from './AddAssetModal';
+import { MarketPulse } from './MarketPulse';
 import { LayoutGrid, List, Plus, Trash2 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -82,6 +83,8 @@ export function AssetTable() {
           </div>
         </div>
       </div>
+
+      <MarketPulse />
 
       {/* Hedefe Ulaşanlar Bölümü */}
       {reachedAssets.length > 0 && (

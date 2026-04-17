@@ -2,14 +2,17 @@ import { useEffect, useCallback } from 'react';
 import { useAssetStore } from '@/store/useAssetStore';
 
 export function usePriceData() {
-  const { assets, updateAsset, refreshCount } = useAssetStore();
+  const { assets, updateAsset, updateIndices, refreshCount } = useAssetStore();
 
   const fetchPrices = useCallback(async () => {
-    if (assets.length === 0) return;
+    const indexSymbols = ['XU100.IS', 'XU030.IS', '^GSPC', '^IXIC'];
+    const assetSymbols = assets.map(a => a.symbol);
+    const allSymbols = Array.from(new Set([...indexSymbols, ...assetSymbols]));
+    
+    if (allSymbols.length === 0) return;
 
     try {
-      const symbols = assets.map(a => a.symbol).join(',');
-      const response = await fetch(`/api/prices?symbols=${encodeURIComponent(symbols)}`);
+      const response = await fetch(`/api/prices?symbols=${encodeURIComponent(allSymbols.join(','))}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -19,6 +22,16 @@ export function usePriceData() {
 
       if (Array.isArray(data)) {
         data.forEach((item: any) => {
+          // Eğer bir endeks ise
+          if (indexSymbols.includes(item.symbol)) {
+            updateIndices(item.symbol, {
+              price: item.price,
+              change: item.changePercent,
+              name: item.name
+            });
+          }
+
+          // Eğer bir varlık ise (Endeksler varlık da olabilir, o yüzden if/else yapmadık)
           const matchingAssets = assets.filter(a => a.symbol === item.symbol);
           if (matchingAssets.length > 0) {
             matchingAssets.forEach(asset => {
@@ -35,7 +48,7 @@ export function usePriceData() {
     } catch (error) {
       console.error('Price update failed:', error);
     }
-  }, [assets, updateAsset]);
+  }, [assets, updateAsset, updateIndices]);
 
   useEffect(() => {
     fetchPrices();
