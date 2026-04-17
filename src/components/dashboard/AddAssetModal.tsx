@@ -124,6 +124,31 @@ export function AddAssetModal({ isOpen, onClose }: AddAssetModalProps) {
                   className="bg-zinc-950 border border-zinc-800 p-3 rounded-xl text-zinc-100 font-mono text-sm focus:border-emerald-500 outline-none transition-all"
                   placeholder="Symbol..."
                 />
+                <AnimatePresence>
+                  {formData.type === 'COMMODITY' && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="flex gap-2 mt-1 px-1 overflow-hidden"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, symbol: 'GC=F', currency: '$' })}
+                        className="text-[9px] font-black bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-1 rounded-md hover:bg-amber-500 hover:text-black transition-all"
+                      >
+                        ALTIN (GC=F)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, symbol: 'SI=F', currency: '$' })}
+                        className="text-[9px] font-black bg-zinc-400/10 text-zinc-400 border border-zinc-400/20 px-2 py-1 rounded-md hover:bg-zinc-100 hover:text-black transition-all"
+                      >
+                        GÜMÜŞ (SI=F)
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
