@@ -2,14 +2,17 @@ import { useEffect, useCallback } from 'react';
 import { useAssetStore } from '@/store/useAssetStore';
 
 export function usePriceData() {
-  const { updateAsset, updateIndices, refreshCount, setLastUpdated, setIsUpdating } = useAssetStore();
+  const { updateAssetPrice, updatePortfolioPrice, updateIndices, refreshCount, setLastUpdated, setIsUpdating } = useAssetStore();
 
   const fetchPrices = useCallback(async () => {
     setIsUpdating(true);
-    const assets = useAssetStore.getState().assets;
+    const { assets, portfolioHoldings } = useAssetStore.getState();
     const indexSymbols = ['XU100.IS', 'XU030.IS', 'USDTRY=X', '^GSPC', '^IXIC'];
+    
+    // Hem terminal hem portföy sembollerini birleştir
     const assetSymbols = assets.map(a => a.symbol);
-    const allSymbols = Array.from(new Set([...indexSymbols, ...assetSymbols]));
+    const portfolioSymbols = portfolioHoldings.map(h => h.symbol);
+    const allSymbols = Array.from(new Set([...indexSymbols, ...assetSymbols, ...portfolioSymbols]));
     
     if (allSymbols.length === 0) {
       setIsUpdating(false);
@@ -18,15 +21,13 @@ export function usePriceData() {
 
     try {
       const response = await fetch(`/api/prices?symbols=${encodeURIComponent(allSymbols.join(','))}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       
       const data = await response.json();
 
       if (Array.isArray(data)) {
         data.forEach((item: any) => {
+          // 1. Endeksleri Güncelle
           if (indexSymbols.includes(item.symbol)) {
             updateIndices(item.symbol, {
               price: item.price,
@@ -35,23 +36,28 @@ export function usePriceData() {
             });
           }
 
+          // 2. Terminal Varlıklarını Güncelle (Lightweight)
           const matchingAssets = assets.filter(a => a.symbol === item.symbol);
-          if (matchingAssets.length > 0) {
-            matchingAssets.forEach(asset => {
-              updateAsset(asset.id, { 
-                currentPrice: item.price,
-                last4hPrice: item.last4hPrice,
-                dailyChange: item.changePercent,
-                name: item.name || asset.name 
-              });
+          matchingAssets.forEach(asset => {
+            updateAssetPrice(asset.id, { 
+              currentPrice: item.price,
+              last4hPrice: item.last4hPrice,
+              dailyChange: item.changePercent
             });
-          }
+          });
+
+          // 3. Portföy Varlıklarını Güncelle (Lightweight)
+          const matchingPortfolio = portfolioHoldings.filter(h => h.symbol === item.symbol);
+          matchingPortfolio.forEach(itemPH => {
+            updatePortfolioPrice(itemPH.id, {
+              currentPrice: item.price,
+              dailyChange: item.changePercent
+            });
+          });
         });
 
         setLastUpdated(new Date().toLocaleTimeString('tr-TR', { 
-          hour: '2-digit', 
-          minute: '2-digit', 
-          second: '2-digit' 
+          hour: '2-digit', minute: '2-digit', second: '2-digit' 
         }));
       }
     } catch (error) {
@@ -59,7 +65,7 @@ export function usePriceData() {
     } finally {
       setIsUpdating(false);
     }
-  }, [updateAsset, updateIndices, setLastUpdated, setIsUpdating]);
+  }, [updateAssetPrice, updatePortfolioPrice, updateIndices, setLastUpdated, setIsUpdating]);
 
   useEffect(() => {
     fetchPrices();

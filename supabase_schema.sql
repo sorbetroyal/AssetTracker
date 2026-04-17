@@ -1,6 +1,4 @@
--- Supabase SQL Editor'da çalıştırın
-
--- 1. Tabloyu oluşturun
+-- 1. Terminal (Takip Listesi) Tablosu
 CREATE TABLE IF NOT EXISTS assets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     symbol TEXT NOT NULL,
@@ -13,13 +11,21 @@ CREATE TABLE IF NOT EXISTS assets (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 2. Row Level Security (RLS) Ayarları (Opsiyonel ama önerilir)
--- Şimdilik testi kolaylaştırmak için herkesin okuma ve yazma yapmasına izin veriyoruz.
--- Canlıya geçerken bunu kullanıcı bazlı (auth.uid()) yapmalısınız.
+-- 2. Portföy (Gerçek Varlıklar) Tablosu
+CREATE TABLE IF NOT EXISTS portfolio (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    account_name TEXT NOT NULL, -- Hesap/Banka Adı
+    asset_type TEXT NOT NULL,   -- BIST, CRYPTO, COMMODITY, BANK, US
+    symbol TEXT NOT NULL,       -- Varlık Sembolü veya Hesap Adı
+    purchase_at DATE DEFAULT CURRENT_DATE, -- Alım Tarihi
+    purchase_price DOUBLE PRECISION DEFAULT 0, -- Alım Fiyatı
+    amount DOUBLE PRECISION DEFAULT 0, -- Miktar
+    currency TEXT DEFAULT '₺',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
 ALTER TABLE assets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE portfolio ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow public access" ON assets
-    FOR ALL
-    USING (true)
-    WITH CHECK (true);
+CREATE POLICY "Allow public access for assets" ON assets FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow public access for portfolio" ON portfolio FOR ALL USING (true) WITH CHECK (true);
