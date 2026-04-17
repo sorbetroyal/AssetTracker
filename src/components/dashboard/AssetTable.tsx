@@ -188,7 +188,7 @@ function AssetCard({ asset, removeAsset, isReached = false }: any) {
                 "text-sm md:text-2xl font-mono font-black px-2 md:px-3 py-1 rounded-lg md:rounded-xl flex items-center gap-1 justify-center",
                 asset.dailyChange >= 0 ? "text-emerald-400 bg-emerald-400/10" : "text-red-400 bg-red-400/10"
               )}>
-                {asset.dailyChange >= 0 ? "+" : "-"}%{Math.abs(asset.dailyChange).toFixed(2)}
+                {asset.dailyChange >= 0 ? "+" : "-"}{Math.abs(asset.dailyChange).toFixed(2)}%
               </span>
             )}
           </div>
