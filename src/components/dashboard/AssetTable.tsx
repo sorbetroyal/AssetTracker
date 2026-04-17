@@ -22,9 +22,11 @@ export function AssetTable() {
   // Varlıkları iki gruba ayıralım: Hedefe Ulaşanlar ve Bekleyenler
   const reachedAssets = sortedAssets.filter(asset => {
     const isUpward = asset.strategy === 'Kar Al' || asset.strategy === 'Dirençten Al';
-    const current = asset.currentPrice || asset.entryPrice;
-    if (current === 0) return false;
-    return isUpward ? current >= asset.targetPrice : current <= asset.targetPrice;
+    const referencePrice = asset.last4hPrice || 0;
+    
+    if (referencePrice === 0) return false;
+    
+    return isUpward ? referencePrice >= asset.targetPrice : referencePrice <= asset.targetPrice;
   });
 
   const pendingAssets = sortedAssets.filter(asset => !reachedAssets.find(r => r.id === asset.id));
