@@ -20,8 +20,6 @@ export async function GET(req: NextRequest) {
     const results = await Promise.all(quotesArray.map(async (quote) => {
       let last4hPrice = quote.regularMarketPrice;
       const isBIST = quote.symbol.endsWith('.IS');
-      
-      // Market durumu kontrolü
       const isMarketOpen = quote.marketState === 'REGULAR';
 
       try {
@@ -31,36 +29,31 @@ export async function GET(req: NextRequest) {
         
         if (chart && chart.quotes) {
           const valid = chart.quotes.filter((q: any) => q.close !== null && q.close !== undefined);
-          
           if (valid.length > 0) {
             if (isBIST) {
-              // BIST için TV standart mumları: 14:00 (11:00 UTC) ve 18:00 (15:00 UTC)
               const tvBist = valid.filter((q: any) => {
                 const hour = new Date(q.date).getUTCHours();
                 return hour === 11 || hour === 15;
               });
-              
-              // Eğer piyasa kapalıysa direkt son fiyatı al, değilse en son TV mumunu al
               if (!isMarketOpen) {
                 last4hPrice = quote.regularMarketPrice;
               } else {
                 last4hPrice = tvBist.length > 0 ? tvBist[tvBist.length - 1].close : valid[valid.length - 1].close;
               }
             } else {
-              // Kripto ve US için standart 4h dilimleri (0, 4, 8, 12, 16, 20 UTC)
               const tvOthers = valid.filter((q: any) => (new Date(q.date).getUTCHours() % 4 === 0));
               last4hPrice = tvOthers.length > 0 ? tvOthers[tvOthers.length - 1].close : valid[valid.length - 1].close;
             }
           }
         }
       } catch (e) {
-        console.error('Chart error for', quote.symbol, e);
+        console.warn('Chart fetch failed for', quote.symbol);
       }
 
       return {
         symbol: quote.symbol,
         price: quote.regularMarketPrice,
-        last4hPrice: last4hPrice, // Artık BIST kapalıyken price ile aynı olacak
+        last4hPrice: last4hPrice,
         name: quote.shortName || quote.longName,
         changePercent: quote.regularMarketChangePercent
       };
@@ -68,7 +61,18 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(results);
   } catch (error: any) {
-    console.error('Global API error:', error);
-    return NextResponse.json({ error: 'Data Fetching Error' }, { status: 500 });
+    console.error('API Error:', error.message);
+    
+    if (error.code === 429 || error.message?.includes('Too Many Requests')) {
+      return NextResponse.json(
+        { error: 'Yahoo Finance limitine yakalandı. Lütfen biraz bekleyin.' }, 
+        { status: 429 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: 'Veri çekilirken bir hata oluştu.' }, 
+      { status: 500 }
+    );
   }
 }
