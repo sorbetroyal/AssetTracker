@@ -176,7 +176,9 @@ function AssetCard({ asset, removeAsset, isReached = false }: any) {
             )}
           </div>
           <h3 className="text-4xl font-black text-zinc-100 group-hover:text-emerald-400 transition-all tracking-tighter uppercase italic">
-            {asset.symbol.replace('.IS', '').replace('-USD', '')}
+            {asset.symbol === 'GC=F' ? 'ALTIN' : 
+             asset.symbol === 'SI=F' ? 'GÜMÜŞ' : 
+             asset.symbol.replace('.IS', '').replace('-USD', '')}
           </h3>
           <p className="text-sm text-zinc-500 font-bold uppercase tracking-tight mt-1 truncate max-w-[300px]">
             {asset.name}
