@@ -45,14 +45,28 @@ export function AssetTable() {
           </p>
         </div>
         
-        <div className="flex gap-4 bg-zinc-950/60 p-2.5 rounded-[2rem] border border-zinc-800/50">
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-3 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[1.5rem] font-black text-sm transition-all shadow-xl shadow-emerald-500/20 active:scale-95 group"
-          >
-            <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
-            YENİ EKLE
-          </button>
+        <div className="flex gap-4 items-center">
+          {assets.length > 0 && (
+            <div className="hidden md:flex flex-col items-end mr-6 pr-6 border-r border-zinc-800">
+              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Portföy Günlük</span>
+              <div className={cn(
+                "text-2xl font-black tracking-tighter",
+                (assets.reduce((acc, a) => acc + (a.dailyChange || 0), 0) / assets.length) >= 0 ? "text-emerald-400" : "text-red-400"
+              )}>
+                {(assets.reduce((acc, a) => acc + (a.dailyChange || 0), 0) / assets.length).toFixed(2)}%
+              </div>
+            </div>
+          )}
+          
+          <div className="flex gap-4 bg-zinc-950/60 p-2.5 rounded-[2rem] border border-zinc-800/50">
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-3 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[1.5rem] font-black text-sm transition-all shadow-xl shadow-emerald-500/20 active:scale-95 group"
+            >
+              <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+              YENİ EKLE
+            </button>
+          </div>
         </div>
       </div>
 
@@ -154,9 +168,19 @@ function AssetCard({ asset, removeAsset, isReached = false }: any) {
         </div>
         
         <div className="text-right flex flex-col items-end gap-1">
-          <span className="text-2xl font-mono font-black text-zinc-100 bg-zinc-800/20 px-4 py-2 rounded-2xl border border-white/5 shadow-inner">
-            {asset.currency}{asset.currentPrice?.toLocaleString()}
-          </span>
+          <div className="flex flex-col items-end">
+            <span className="text-2xl font-mono font-black text-zinc-100 bg-zinc-800/20 px-4 py-2 rounded-2xl border border-white/5 shadow-inner">
+              {asset.currency}{asset.currentPrice?.toLocaleString()}
+            </span>
+            {asset.dailyChange !== undefined && (
+              <span className={cn(
+                "text-[10px] font-black mt-2 px-2 py-0.5 rounded-md flex items-center gap-1",
+                asset.dailyChange >= 0 ? "text-emerald-400 bg-emerald-400/10" : "text-red-400 bg-red-400/10"
+              )}>
+                {asset.dailyChange >= 0 ? "↑" : "↓"} {Math.abs(asset.dailyChange).toFixed(2)}%
+              </span>
+            )}
+          </div>
           {isReached && (
              <div className="flex flex-col items-end px-2 mt-3 opacity-80">
                 <span className="text-xs font-black text-zinc-500 uppercase tracking-widest mb-1">HEDEFLENEN</span>

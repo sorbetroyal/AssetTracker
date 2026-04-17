@@ -25,7 +25,8 @@ export function usePriceData() {
             matchingAssets.forEach(asset => {
               updateAsset(asset.id, { 
                 currentPrice: item.price,
-                last4hPrice: item.last4hPrice, // İşte burası artık çalışacak!
+                last4hPrice: item.last4hPrice,
+                dailyChange: item.changePercent,
                 name: item.name || asset.name 
               });
             });

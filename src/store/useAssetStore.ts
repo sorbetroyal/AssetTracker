@@ -12,6 +12,7 @@ export interface Asset {
   targetPrice: number;
   currentPrice?: number;
   last4hPrice?: number;
+  dailyChange?: number; // Günlük yüzde değişim
   currency: string;
   createdAt: number;
 }
