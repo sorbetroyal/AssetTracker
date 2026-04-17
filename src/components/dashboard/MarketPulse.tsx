@@ -70,7 +70,7 @@ export function MarketPulse() {
               <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{cfg.label}</span>
               <div className="flex items-center gap-2">
                 <span className={cn(
-                  "text-[10px] font-black px-1.5 py-0.5 rounded",
+                  "text-sm font-mono font-black px-2.5 py-1 rounded-lg",
                   data.change >= 0 ? "text-emerald-400 bg-emerald-400/10" : "text-red-400 bg-red-400/10"
                 )}>
                   {data.change >= 0 ? '+' : ''}{data.change.toFixed(2)}%
