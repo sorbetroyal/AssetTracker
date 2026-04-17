@@ -20,6 +20,7 @@ export interface Asset {
 interface AssetStore {
   assets: Asset[];
   indices: Record<string, { price: number; change: number; name: string }>;
+  indexTargets: Record<string, { targetPrice: number; strategy: string }>;
   isLoading: boolean;
   refreshCount: number;
   triggerRefresh: () => void;
@@ -28,6 +29,7 @@ interface AssetStore {
   removeAsset: (id: string) => Promise<void>;
   updateAsset: (id: string, updates: Partial<Asset>) => Promise<void>;
   updateIndices: (symbol: string, data: { price: number; change: number; name: string }) => void;
+  updateIndexTarget: (symbol: string, targetPrice: number, strategy: string) => void;
   setIndices: (indices: Record<string, any>) => void;
 }
 
@@ -36,11 +38,15 @@ export const useAssetStore = create<AssetStore>()(
     (set, get) => ({
       assets: [],
       indices: {},
+      indexTargets: {},
       isLoading: false,
       refreshCount: 0,
       triggerRefresh: () => set((state) => ({ refreshCount: state.refreshCount + 1 })),
       updateIndices: (symbol, data) => set((state) => ({
         indices: { ...state.indices, [symbol]: data }
+      })),
+      updateIndexTarget: (symbol, targetPrice, strategy) => set((state) => ({
+        indexTargets: { ...state.indexTargets, [symbol]: { targetPrice, strategy } }
       })),
 
       fetchAssets: async () => {
