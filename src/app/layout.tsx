@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Asset Tracker Portfolio",
-  description: "Live target tracking for BIST, US and Crypto assets.",
+  title: "Hedef Takip | Stratejik Portföy Terminali",
+  description: "BIST, ABD Borsaları ve Kripto varlıklar için 4 saatlik kapanış bazlı stratejik hedef takibi.",
 };
 
 export default function RootLayout({

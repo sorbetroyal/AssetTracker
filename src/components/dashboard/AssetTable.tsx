@@ -48,7 +48,7 @@ export function AssetTable() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-zinc-900/40 p-6 rounded-[2rem] border border-white/5 backdrop-blur-xl shadow-2xl gap-4">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-4">
-            <h1 className="text-3xl font-black text-zinc-100 tracking-tighter uppercase italic">VarlıklarIM</h1>
+            <h1 className="text-3xl font-black text-zinc-100 tracking-tighter uppercase italic">HEDEF TAKİP</h1>
             <button 
               onClick={() => triggerRefresh()}
               className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-sm font-black text-zinc-300 hover:text-white transition-all uppercase tracking-widest flex items-center gap-2 active:scale-95 shadow-lg"
