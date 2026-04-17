@@ -39,32 +39,40 @@ export function AssetTable() {
   const pendingAssets = sortedAssets.filter(asset => !reachedAssets.find(r => r.id === asset.id));
 
   return (
-    <div className="flex-1 p-6 flex flex-col gap-6 max-w-7xl mx-auto w-full">
+    <div className="flex-1 p-4 md:p-6 flex flex-col gap-6 max-w-7xl mx-auto w-full">
       <AddAssetModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
       />
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-zinc-900/40 p-6 rounded-[2rem] border border-white/5 backdrop-blur-xl shadow-2xl gap-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-4">
-            <h1 className="text-3xl font-black text-zinc-100 tracking-tighter italic leading-none">Hedef Takip</h1>
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={() => triggerRefresh()}
-                disabled={isUpdating}
-                className={cn(
-                  "px-4 py-1.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-sm font-black text-zinc-300 hover:text-white transition-all uppercase tracking-widest flex items-center gap-2 active:scale-95 shadow-lg",
-                  isUpdating && "opacity-50 cursor-not-allowed"
+      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center bg-zinc-900/40 p-4 md:p-6 rounded-[2rem] border border-white/5 backdrop-blur-xl shadow-2xl gap-6">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-6">
+            <h1 className="text-2xl md:text-3xl font-black text-zinc-100 tracking-tighter italic leading-none text-center sm:text-left">Hedef Takip</h1>
+            
+            <div className="flex flex-col items-center sm:items-start gap-1">
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => triggerRefresh()}
+                  disabled={isUpdating}
+                  className={cn(
+                    "px-3 py-1.5 md:px-4 md:py-1.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-[10px] md:text-sm font-black text-zinc-300 hover:text-white transition-all uppercase tracking-widest flex items-center gap-2 active:scale-95 shadow-lg",
+                    isUpdating && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <svg className={cn("w-3 h-3 md:w-4 md:h-4", isUpdating && "animate-spin")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  {isUpdating ? 'GÜNCELLENİYOR...' : 'GÜNCELLE'}
+                </button>
+                {lastUpdated && (
+                  <span className="hidden sm:inline text-xs font-black text-zinc-400 uppercase tracking-widest">
+                    SON GÜNCELLEME: {lastUpdated}
+                  </span>
                 )}
-              >
-                <svg className={cn("w-4 h-4", isUpdating && "animate-spin")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                {isUpdating ? 'GÜNCELLENİYOR...' : 'GÜNCELLE'}
-              </button>
+              </div>
               {lastUpdated && (
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-widest">
+                <span className="sm:hidden text-[9px] font-black text-zinc-500 uppercase tracking-widest text-center">
                   SON GÜNCELLEME: {lastUpdated}
                 </span>
               )}
@@ -72,9 +80,9 @@ export function AssetTable() {
           </div>
         </div>
         
-        <div className="flex gap-4 items-center w-full md:w-auto">
+        <div className="flex gap-4 items-center justify-center w-full md:w-auto">
           {assets.length > 0 && (
-            <div className="hidden md:flex flex-col items-end mr-6 pr-6 border-r border-zinc-800">
+            <div className="hidden lg:flex flex-col items-end mr-6 pr-6 border-r border-zinc-800">
               <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Portföy Günlük</span>
               <div className={cn(
                 "text-2xl font-black tracking-tighter",
@@ -85,15 +93,13 @@ export function AssetTable() {
             </div>
           )}
           
-          <div className="flex gap-4 bg-zinc-950/60 p-2.5 rounded-[2rem] border border-zinc-800/50">
-            <button 
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-3 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[1.5rem] font-black text-sm transition-all shadow-xl shadow-emerald-500/20 active:scale-95 group"
-            >
-              <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
-              YENİ EKLE
-            </button>
-          </div>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex-1 md:flex-none flex items-center justify-center gap-3 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[1.2rem] font-black text-xs md:text-sm transition-all shadow-xl shadow-emerald-500/20 active:scale-95 group"
+          >
+            <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" />
+            YENİ EKLE
+          </button>
         </div>
       </div>
 
@@ -152,7 +158,7 @@ function AssetCard({ asset, removeAsset, isReached = false }: any) {
   return (
     <div 
       className={cn(
-        "bg-zinc-900/50 border border-zinc-800 p-10 rounded-[2.5rem] hover:border-zinc-500 transition-all group relative overflow-hidden shadow-2xl",
+        "bg-zinc-900/50 border border-zinc-800 p-5 md:p-10 rounded-[1.5rem] md:rounded-[2.5rem] hover:border-zinc-500 transition-all group relative overflow-hidden shadow-2xl",
         isReached && "border-emerald-500/40 bg-emerald-500/[0.03] animate-pulse-subtle",
         isCritical && isLossStrat && "border-red-500/60 shadow-[0_0_50px_rgba(239,68,68,0.25)] animate-pulse duration-[2000ms] ring-1 ring-red-500/20",
         isCritical && !isLossStrat && "border-emerald-500/60 shadow-[0_0_50px_rgba(16,185,129,0.25)] animate-pulse duration-[2000ms] ring-1 ring-emerald-500/20"
@@ -175,20 +181,20 @@ function AssetCard({ asset, removeAsset, isReached = false }: any) {
       {/* Delete Button */}
       <button 
         onClick={() => removeAsset(asset.id)}
-        className="absolute top-6 right-6 p-2.5 text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all opacity-0 group-hover:opacity-100 backdrop-blur-md border border-white/5 z-20"
+        className="absolute top-4 right-4 md:top-6 md:right-6 p-2 text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all opacity-100 md:opacity-0 group-hover:opacity-100 backdrop-blur-md border border-white/5 z-20"
         title="Varlığı Sil"
       >
-        <Trash2 size={20} />
+        <Trash2 size={18} />
       </button>
 
-      <div className="flex justify-between items-start mb-10 pr-12 relative z-10">
+      <div className="flex flex-col sm:flex-row justify-between items-start mb-6 md:mb-10 pr-10 md:pr-12 relative z-10 gap-6">
         <div>
-          <div className="flex gap-2.5 mb-4 items-center">
-            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest bg-zinc-800 px-3 py-1.5 rounded-lg border border-white/5">
+          <div className="flex flex-wrap gap-2 mb-3 md:mb-4 items-center">
+            <span className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest bg-zinc-800 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-white/5">
               {asset.type}
             </span>
             <span className={cn(
-               "text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border",
+               "text-[9px] md:text-[10px] font-black uppercase tracking-widest px-2 md:px-3 py-1 md:py-1.5 rounded-lg border",
                asset.strategy === 'Zarar Kes' ? "bg-red-500/20 text-red-400 border-red-500/30" :
                asset.strategy === 'Dirençten Al' ? "bg-purple-500/20 text-purple-400 border-purple-500/30" :
                asset.strategy === 'Destekten Al' ? "bg-blue-500/20 text-blue-400 border-blue-500/30" :
@@ -198,36 +204,36 @@ function AssetCard({ asset, removeAsset, isReached = false }: any) {
             </span>
             {isCritical && !isReached && (
               <span className={cn(
-                "text-[9px] font-[1000] px-3 py-1.5 rounded-lg animate-pulse tracking-tighter ring-1",
+                "text-[8px] md:text-[9px] font-[1000] px-2 py-1 md:px-3 md:py-1.5 rounded-lg animate-pulse tracking-tighter ring-1",
                 isLossStrat ? "bg-red-500/40 text-white ring-red-400/50" : "bg-emerald-500/40 text-black ring-emerald-400/50"
               )}>
-                ⚠️ KRİTİK BÖLGE
+                ⚠️ KRİTİK
               </span>
             )}
             {isReached && (
-              <span className="bg-gradient-to-r from-emerald-500 to-emerald-400 text-black text-[11px] font-[1000] px-4 py-1.5 rounded-xl shadow-[0_0_30px_rgba(16,185,129,0.7)] animate-bounce tracking-tighter ring-2 ring-emerald-300/20">
-                🚀 HEDEF GELDİ!
+              <span className="bg-gradient-to-r from-emerald-500 to-emerald-400 text-black text-[9px] md:text-[11px] font-[1000] px-3 md:px-4 py-1 md:py-1.5 rounded-xl shadow-[0_0_30px_rgba(16,185,129,0.7)] animate-bounce tracking-tighter ring-2 ring-emerald-300/20">
+                🚀 HEDEF!
               </span>
             )}
           </div>
-          <h3 className="text-4xl font-black text-zinc-100 group-hover:text-zinc-50 transition-all tracking-tighter uppercase italic">
+          <h3 className="text-2xl md:text-4xl font-black text-zinc-100 group-hover:text-zinc-50 transition-all tracking-tighter uppercase italic">
             {asset.symbol === 'GC=F' ? 'ALTIN' : 
              asset.symbol === 'SI=F' ? 'GÜMÜŞ' : 
              asset.symbol.replace('.IS', '').replace('-USD', '')}
           </h3>
-          <p className="text-sm text-zinc-500 font-bold uppercase tracking-tight mt-1 truncate max-w-[300px]">
+          <p className="text-xs md:text-sm text-zinc-500 font-bold uppercase tracking-tight mt-1 truncate max-w-[200px] md:max-w-[300px]">
             {asset.name}
           </p>
         </div>
         
-        <div className="text-right flex flex-col items-end gap-2">
-          <div className="flex flex-col md:flex-row items-end md:items-center gap-2 md:gap-3 bg-zinc-800/20 p-2 md:p-3 rounded-2xl md:rounded-[1.5rem] border border-white/5 shadow-inner">
-            <span className="text-xl md:text-2xl font-mono font-black text-zinc-100">
+        <div className="text-left sm:text-right flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-3 bg-zinc-800/20 p-2 md:p-3 rounded-xl md:rounded-[1.5rem] border border-white/5 shadow-inner w-full sm:w-auto justify-between sm:justify-end">
+            <span className="text-lg md:text-2xl font-mono font-black text-zinc-100">
               {asset.currency}{asset.currentPrice?.toLocaleString()}
             </span>
             {asset.dailyChange !== undefined && (
               <span className={cn(
-                "text-sm md:text-2xl font-mono font-black px-2 md:px-3 py-1 rounded-lg md:rounded-xl flex items-center gap-1 justify-center",
+                "text-xs md:text-lg font-mono font-black px-2 py-1 rounded-lg md:rounded-xl flex items-center gap-1",
                 asset.dailyChange >= 0 ? "text-emerald-400 bg-emerald-400/10" : "text-red-400 bg-red-400/10"
               )}>
                 {asset.dailyChange >= 0 ? "+" : "-"}{Math.abs(asset.dailyChange).toFixed(2)}%
@@ -235,12 +241,12 @@ function AssetCard({ asset, removeAsset, isReached = false }: any) {
             )}
           </div>
           {(isReached || isCritical) && (
-             <div className="flex flex-col items-end px-2 mt-3 opacity-90">
-                <span className="text-xs font-black text-zinc-500 uppercase tracking-widest mb-1">
+             <div className="flex flex-col items-start sm:items-end px-1 md:px-2 opacity-90">
+                <span className="text-[10px] md:text-xs font-black text-zinc-500 uppercase tracking-widest mb-0.5">
                   {isReached ? 'HEDEFLENEN' : 'KRİTİK HEDEF'}
                 </span>
                 <span className={cn(
-                  "text-xl font-mono font-black tracking-tighter",
+                  "text-lg md:text-xl font-mono font-black tracking-tighter",
                   isLossStrat ? "text-red-400" : "text-emerald-400"
                 )}>
                    {asset.currency}{asset.targetPrice.toLocaleString()}

@@ -63,7 +63,7 @@ export function MarketPulse() {
           <div 
             key={cfg.symbol}
             className={cn(
-              "bg-zinc-900/40 border border-white/5 p-4 rounded-2xl flex flex-col gap-2 hover:border-zinc-500 transition-all group relative overflow-hidden",
+              "bg-zinc-900/40 border border-white/5 p-3 md:p-4 rounded-2xl flex flex-col gap-2 hover:border-zinc-500 transition-all group relative overflow-hidden",
               editingSymbol === cfg.symbol && "ring-2 ring-emerald-500/50 border-emerald-500/50 bg-zinc-900"
             )}
           >
@@ -71,7 +71,7 @@ export function MarketPulse() {
               <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{cfg.label}</span>
               <div className="flex items-center gap-2">
                 <span className={cn(
-                  "text-lg font-mono font-black px-3 py-1 rounded-xl tracking-tighter",
+                  "text-[10px] md:text-lg font-mono font-black px-2 md:px-3 py-1 rounded-xl tracking-tighter",
                   data.change >= 0 ? "text-emerald-400 bg-emerald-400/10" : "text-red-400 bg-red-400/10"
                 )}>
                   {data.change >= 0 ? '+' : ''}{data.change.toFixed(2)}%
@@ -86,7 +86,7 @@ export function MarketPulse() {
             </div>
 
             <div className="flex justify-between items-baseline relative z-10">
-              <span className="text-xl font-mono font-black text-zinc-100">
+              <span className="text-base md:text-xl font-mono font-black text-zinc-100">
                 {cfg.currency}{data.price?.toLocaleString()}
               </span>
               {hasTarget && (
