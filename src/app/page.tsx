@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { HeaderIndexBar } from '@/components/layout/HeaderIndexBar';
 import { AssetTable } from '@/components/dashboard/AssetTable';
 import { usePriceData } from '@/hooks/usePriceData';
 import { useAssetStore } from '@/store/useAssetStore';
@@ -18,10 +17,7 @@ export default function Home() {
   usePriceData();
 
   return (
-    <main className="min-h-screen bg-zinc-950 flex flex-col">
-      {/* Üst Endeks Akış Barı */}
-      <HeaderIndexBar />
-      
+    <main className="min-h-screen bg-zinc-950 flex flex-col pt-10">
       <div className="flex-1 flex flex-col max-w-7xl mx-auto w-full">
         {/* Ana İçerik */}
         <AssetTable />
