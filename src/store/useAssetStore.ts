@@ -21,6 +21,8 @@ interface AssetStore {
   assets: Asset[];
   indices: Record<string, number>;
   isLoading: boolean;
+  refreshCount: number;
+  triggerRefresh: () => void;
   fetchAssets: () => Promise<void>;
   addAsset: (asset: Omit<Asset, 'id' | 'createdAt'>) => Promise<void>;
   removeAsset: (id: string) => Promise<void>;
@@ -34,6 +36,8 @@ export const useAssetStore = create<AssetStore>()(
       assets: [],
       indices: {},
       isLoading: false,
+      refreshCount: 0,
+      triggerRefresh: () => set((state) => ({ refreshCount: state.refreshCount + 1 })),
 
       fetchAssets: async () => {
         set({ isLoading: true });

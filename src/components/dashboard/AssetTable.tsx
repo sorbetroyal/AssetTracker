@@ -13,7 +13,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export function AssetTable() {
-  const { assets, removeAsset } = useAssetStore();
+  const { assets, removeAsset, triggerRefresh } = useAssetStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Varlıkları eklenme sırasına göre sabit tutalım (zıplamayı önler)
@@ -36,16 +36,27 @@ export function AssetTable() {
         onClose={() => setIsModalOpen(false)} 
       />
 
-      <div className="flex justify-between items-center bg-zinc-900/40 p-8 rounded-[3rem] border border-white/5 backdrop-blur-xl shadow-2xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-zinc-900/40 p-8 rounded-[3rem] border border-white/5 backdrop-blur-xl shadow-2xl gap-6">
         <div>
           <h1 className="text-4xl font-black text-zinc-100 tracking-tighter uppercase italic">VarlıklarIM</h1>
-          <p className="text-sm text-zinc-500 font-bold uppercase tracking-[0.3em] mt-2 opacity-50 flex items-center gap-2">
-            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-            Terminal Live v1.0
-          </p>
+          <div className="flex items-center gap-3 mt-2">
+            <p className="text-xs text-zinc-500 font-bold uppercase tracking-[0.2em] opacity-50 flex items-center gap-2">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+              Terminal Live v1.0
+            </p>
+            <button 
+              onClick={() => triggerRefresh()}
+              className="px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-full text-[10px] font-black text-zinc-400 hover:text-white transition-all uppercase tracking-widest flex items-center gap-2 active:scale-95"
+            >
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              GÜNCELLE
+            </button>
+          </div>
         </div>
         
-        <div className="flex gap-4 items-center">
+        <div className="flex gap-4 items-center w-full md:w-auto">
           {assets.length > 0 && (
             <div className="hidden md:flex flex-col items-end mr-6 pr-6 border-r border-zinc-800">
               <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Portföy Günlük</span>

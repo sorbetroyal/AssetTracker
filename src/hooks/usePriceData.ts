@@ -2,14 +2,13 @@ import { useEffect, useCallback } from 'react';
 import { useAssetStore } from '@/store/useAssetStore';
 
 export function usePriceData() {
-  const { assets, updateAsset } = useAssetStore();
+  const { assets, updateAsset, refreshCount } = useAssetStore();
 
   const fetchPrices = useCallback(async () => {
     if (assets.length === 0) return;
 
     try {
       const symbols = assets.map(a => a.symbol).join(',');
-      // POST yerine GET kullanıyoruz ve sembolleri query param olarak gönderiyoruz
       const response = await fetch(`/api/prices?symbols=${encodeURIComponent(symbols)}`);
       
       if (!response.ok) {
@@ -42,7 +41,7 @@ export function usePriceData() {
     fetchPrices();
     const interval = setInterval(fetchPrices, 30000); // 30 saniyede bir güncelle
     return () => clearInterval(interval);
-  }, [fetchPrices]);
+  }, [fetchPrices, refreshCount]);
 
   return { refresh: fetchPrices };
 }
