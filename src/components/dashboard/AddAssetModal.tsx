@@ -156,7 +156,14 @@ export function AddAssetModal({ isOpen, onClose }: AddAssetModalProps) {
                   <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Borsa Tipi</label>
                   <select
                     value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value as Asset['type'] })}
+                    onChange={(e) => {
+                      const newType = e.target.value as Asset['type'];
+                      setFormData({ 
+                        ...formData, 
+                        type: newType,
+                        currency: newType === 'BIST' ? '₺' : '$'
+                      });
+                    }}
                     className="bg-zinc-950 border border-zinc-800 p-3 rounded-xl text-zinc-100 text-sm focus:border-emerald-500 outline-none transition-all"
                   >
                     <option value="BIST">BIST</option>
