@@ -17,8 +17,14 @@ export function AssetTable() {
   const { assets, removeAsset, triggerRefresh } = useAssetStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Varlıkları eklenme sırasına göre sabit tutalım (zıplamayı önler)
-  const sortedAssets = [...assets].sort((a, b) => a.createdAt - b.createdAt);
+  // Varlıkları hedefe yakınlığa göre sıralayalım
+  const getProximity = (asset: any) => {
+    const current = asset.currentPrice || asset.entryPrice || 0;
+    if (current === 0 || asset.targetPrice === 0) return Infinity;
+    return Math.abs((current - asset.targetPrice) / asset.targetPrice);
+  };
+
+  const sortedAssets = [...assets].sort((a, b) => getProximity(a) - getProximity(b));
 
   // Varlıkları iki gruba ayıralım: Hedefe Ulaşanlar ve Bekleyenler
   const reachedAssets = sortedAssets.filter(asset => {
