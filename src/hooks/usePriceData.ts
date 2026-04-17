@@ -2,15 +2,19 @@ import { useEffect, useCallback } from 'react';
 import { useAssetStore } from '@/store/useAssetStore';
 
 export function usePriceData() {
-  const { updateAsset, updateIndices, refreshCount, setLastUpdated } = useAssetStore();
+  const { updateAsset, updateIndices, refreshCount, setLastUpdated, setIsUpdating } = useAssetStore();
 
   const fetchPrices = useCallback(async () => {
+    setIsUpdating(true);
     const assets = useAssetStore.getState().assets;
     const indexSymbols = ['XU100.IS', 'XU030.IS', 'USDTRY=X', '^GSPC', '^IXIC'];
     const assetSymbols = assets.map(a => a.symbol);
     const allSymbols = Array.from(new Set([...indexSymbols, ...assetSymbols]));
     
-    if (allSymbols.length === 0) return;
+    if (allSymbols.length === 0) {
+      setIsUpdating(false);
+      return;
+    }
 
     try {
       const response = await fetch(`/api/prices?symbols=${encodeURIComponent(allSymbols.join(','))}`);
@@ -52,8 +56,10 @@ export function usePriceData() {
       }
     } catch (error) {
       console.error('Price update failed:', error);
+    } finally {
+      setIsUpdating(false);
     }
-  }, [updateAsset, updateIndices, setLastUpdated]);
+  }, [updateAsset, updateIndices, setLastUpdated, setIsUpdating]);
 
   useEffect(() => {
     fetchPrices();

@@ -14,7 +14,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export function AssetTable() {
-  const { assets, removeAsset, triggerRefresh, lastUpdated } = useAssetStore();
+  const { assets, removeAsset, triggerRefresh, lastUpdated, isUpdating } = useAssetStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Varlıkları hedefe yakınlığa göre sıralayalım (4S Kapanışını önceliklendirerek)
@@ -52,12 +52,16 @@ export function AssetTable() {
             <div className="flex items-center gap-4">
               <button 
                 onClick={() => triggerRefresh()}
-                className="px-4 py-1.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-sm font-black text-zinc-300 hover:text-white transition-all uppercase tracking-widest flex items-center gap-2 active:scale-95 shadow-lg"
+                disabled={isUpdating}
+                className={cn(
+                  "px-4 py-1.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-sm font-black text-zinc-300 hover:text-white transition-all uppercase tracking-widest flex items-center gap-2 active:scale-95 shadow-lg",
+                  isUpdating && "opacity-50 cursor-not-allowed"
+                )}
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={cn("w-4 h-4", isUpdating && "animate-spin")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                GÜNCELLE
+                {isUpdating ? 'GÜNCELLENİYOR...' : 'GÜNCELLE'}
               </button>
               {lastUpdated && (
                 <span className="text-xs font-black text-zinc-400 uppercase tracking-widest">

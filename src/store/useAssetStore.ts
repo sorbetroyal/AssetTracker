@@ -24,8 +24,10 @@ interface AssetStore {
   isLoading: boolean;
   refreshCount: number;
   lastUpdated: string | null;
+  isUpdating: boolean;
   triggerRefresh: () => void;
   setLastUpdated: (time: string) => void;
+  setIsUpdating: (val: boolean) => void;
   fetchAssets: () => Promise<void>;
   addAsset: (asset: Omit<Asset, 'id' | 'createdAt'>) => Promise<void>;
   removeAsset: (id: string) => Promise<void>;
@@ -44,8 +46,10 @@ export const useAssetStore = create<AssetStore>()(
       isLoading: false,
       refreshCount: 0,
       lastUpdated: null,
+      isUpdating: false,
       triggerRefresh: () => set((state) => ({ refreshCount: state.refreshCount + 1 })),
       setLastUpdated: (time) => set({ lastUpdated: time }),
+      setIsUpdating: (val) => set({ isUpdating: val }),
       updateIndices: (symbol, data) => set((state) => ({
         indices: { ...state.indices, [symbol]: data }
       })),
