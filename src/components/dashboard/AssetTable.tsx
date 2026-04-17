@@ -51,9 +51,9 @@ export function AssetTable() {
             <h1 className="text-3xl font-black text-zinc-100 tracking-tighter uppercase italic">VarlıklarIM</h1>
             <button 
               onClick={() => triggerRefresh()}
-              className="px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-full text-[10px] font-black text-zinc-400 hover:text-white transition-all uppercase tracking-widest flex items-center gap-2 active:scale-95"
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-sm font-black text-zinc-300 hover:text-white transition-all uppercase tracking-widest flex items-center gap-2 active:scale-95 shadow-lg"
             >
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
               GÜNCELLE
