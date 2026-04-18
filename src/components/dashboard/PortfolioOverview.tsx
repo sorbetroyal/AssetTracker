@@ -89,6 +89,12 @@ export function PortfolioOverview() {
     <div className="flex-1 p-3 md:p-8 flex flex-col gap-6 md:gap-10 max-w-7xl mx-auto w-full bg-black/20 rounded-2xl md:rounded-[3rem]">
       <AddAssetModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} initialType={modalType as any} isPortfolio={true} />
 
+      {/* AKSİYON BUTONLARI */}
+      <div className="flex gap-3 px-1">
+        <PlusButton label="Varlık Ekle" color="blue" onClick={() => { setSelectedAccountId(null); setSelectedAssetType(null); setModalType('BIST'); setIsModalOpen(true); }} />
+        <PlusButton label="Hesap Ekle" color="amber" onClick={() => { setModalType('BANK'); setIsModalOpen(true); }} />
+      </div>
+
       {/* ÖZET KARTLAR */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <SummaryCard label="Portföy Değeri" value={`₺${totalStats.totalValue.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} icon={<Wallet size={14} className="text-emerald-500" />} />
@@ -104,12 +110,7 @@ export function PortfolioOverview() {
           colorClass="bg-amber-500 shadow-amber-500/50" 
           textColor="text-amber-500" 
           onClick={() => setSelectedAccountId(null)}
-        >
-          <div className="flex gap-3">
-            <PlusButton label="Varlık Ekle" color="blue" onClick={() => { setSelectedAccountId(null); setSelectedAssetType(null); setModalType('BIST'); setIsModalOpen(true); }} />
-            <PlusButton label="Hesap Ekle" color="amber" onClick={() => { setModalType('BANK'); setIsModalOpen(true); }} />
-          </div>
-        </SectionWrapper>
+        />
         
         <div className="flex flex-col gap-1">
           {accounts.filter(acc => {
@@ -177,8 +178,10 @@ export function PortfolioOverview() {
                     <span className={cn("text-2xl font-bold tracking-tighter truncate w-[160px]", isSelected ? "text-emerald-400" : "text-white")}>{data.name}</span>
                     <BadgeGroup amount={data.amount} weight={weight} isSelected={isSelected} color="emerald" />
                   </div>
-                  <ValueColumn value={data.dailyGain} percent={dailyPercent} />
-                  <ValueColumn value={data.totalGain} percent={pnlPercent} />
+                  <div className="flex flex-row md:flex-col gap-x-4 gap-y-1">
+                    <ValueColumn value={data.dailyGain} percent={dailyPercent} />
+                    <ValueColumn value={data.totalGain} percent={pnlPercent} />
+                  </div>
                   <div className="flex-[1] text-right text-2xl font-mono font-bold tracking-tighter text-white">
                     ₺{data.totalValue.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
                   </div>
@@ -255,8 +258,10 @@ export function PortfolioOverview() {
                     </span>
                     <BadgeGroup amount={item.totalAmount} weight={weight} isAsset />
                   </div>
-                  <ValueColumn value={dailyGainVal} percent={item.dailyChange || 0} />
-                  <ValueColumn value={value - cost} percent={avgPurchasePrice > 0 ? ((currentPrice - avgPurchasePrice)/avgPurchasePrice)*100 : 0} />
+                  <div className="flex flex-row md:flex-col gap-x-4 gap-y-1">
+                    <ValueColumn value={dailyGainVal} percent={item.dailyChange || 0} />
+                    <ValueColumn value={value - cost} percent={avgPurchasePrice > 0 ? ((currentPrice - avgPurchasePrice)/avgPurchasePrice)*100 : 0} />
+                  </div>
                   <div className="flex-[1] text-right text-lg md:text-2xl font-mono font-bold tracking-tighter text-white">
                     ₺{value.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
                   </div>
@@ -308,21 +313,21 @@ function RowWrapper({ children, isSelected, onClick, activeColor, className, sho
       layout 
       onClick={confirmDelete ? undefined : onClick}
       className={cn(
-      "group relative flex flex-col md:flex-row md:items-center gap-2 md:gap-4 p-4 md:pl-8 md:pr-32 md:py-4 rounded-2xl border transition-all overflow-hidden",
+      "group relative flex flex-col md:flex-row md:items-center gap-1.5 md:gap-4 p-3 md:pl-8 md:pr-32 md:py-4 rounded-xl md:rounded-2xl border transition-all overflow-hidden",
       !isIncluded ? "opacity-30 grayscale border-white/5 bg-transparent" : isSelected ? cn("bg-zinc-800/80 scale-[1.005] z-10", colorMap[activeColor]) : "even:bg-zinc-900/40 odd:bg-transparent border-white/5 hover:bg-zinc-800 hover:border-white/20 hover:shadow-[0_0_20px_rgba(255,255,255,0.03)]",
       className
     )}>
       {children}
-      <div className="md:absolute md:right-4 flex items-center justify-end gap-2 mt-2 md:mt-0 z-50">
+      <div className="md:absolute md:right-4 flex items-center justify-end gap-2 mt-1 md:mt-0 z-50">
         {showToggle && (
           <button 
             onClick={(e) => { e.stopPropagation(); onToggle && onToggle(e); }}
             className={cn(
-              "p-3 rounded-xl transition-all border border-white/10 bg-black/60 backdrop-blur-md",
+              "p-2 md:p-3 rounded-xl transition-all border border-white/10 bg-black/60 backdrop-blur-md",
               isIncluded ? "text-emerald-500 hover:bg-emerald-500/20" : "text-zinc-500 hover:bg-white/10"
             )}
           >
-            {isIncluded ? <Eye size={18} /> : <EyeOff size={18} />}
+            {isIncluded ? <Eye size={16} /> : <EyeOff size={16} />}
           </button>
         )}
         {showDelete && (
@@ -338,13 +343,13 @@ function RowWrapper({ children, isSelected, onClick, activeColor, className, sho
               }
             }}
             className={cn(
-              "p-3 rounded-xl transition-all flex items-center gap-2 font-black text-[10px] tracking-widest",
+              "p-2 md:p-3 rounded-xl transition-all flex items-center gap-2 font-black text-[10px] tracking-widest",
               confirmDelete 
                 ? "bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]" 
                 : "text-red-500 hover:text-white hover:bg-red-500/40 border border-red-500/20 bg-black/60 backdrop-blur-md"
             )}
           >
-            {confirmDelete ? "SİLİNSİN Mİ?" : <Trash2 size={18} />}
+            {confirmDelete ? "SİL?" : <Trash2 size={16} />}
           </button>
         )}
       </div>
@@ -409,8 +414,10 @@ function AccountSummaryItem({ data, isIncluded, isSelected, weight, onSelect, on
         <span className={cn("text-lg md:text-2xl font-bold tracking-tighter truncate max-w-[120px] md:max-w-[200px]", isSelected ? "text-amber-500" : "text-white")}>{data.accountName}</span>
         <BadgeGroup amount={data.amount} weight={weight} isSelected={isSelected} color="amber" />
       </div>
-      <ValueColumn value={data.dailyGain} percent={dailyPercent} />
-      <ValueColumn value={data.totalGain} percent={pnlPercent} />
+      <div className="flex flex-row md:flex-col gap-x-4 gap-y-1">
+        <ValueColumn value={data.dailyGain} percent={dailyPercent} />
+        <ValueColumn value={data.totalGain} percent={pnlPercent} />
+      </div>
       <div className="flex-[1] text-right text-2xl font-mono font-bold tracking-tighter text-white">
         ₺{data.totalValue.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
       </div>
