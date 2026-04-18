@@ -175,40 +175,42 @@ export function PortfolioOverview() {
               const isSelected = selectedAssetType === data.rawType;
               return (
                 <RowWrapper key={data.rawType} isSelected={isSelected} onClick={() => setSelectedAssetType(isSelected ? null : data.rawType)} activeColor="emerald">
-                  <div className="w-[80px] md:w-[140px] shrink-0 overflow-hidden">
-                    <span className={cn("text-lg md:text-2xl font-bold tracking-tighter truncate block", isSelected ? "text-emerald-400" : "text-white")}>
-                      {data.name}
-                    </span>
-                  </div>
-                  <div className="w-[80px] md:w-[110px] shrink-0">
-                    <div className={cn("text-[10px] md:text-xs font-black uppercase px-2 py-0.5 rounded border tracking-tighter text-center truncate", isSelected ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400" : "bg-white/5 border-white/10 text-white/50")}>
-                      {data.amount.toLocaleString('tr-TR')} ADET
+                  <div className="flex flex-row items-center gap-2 md:contents w-full md:w-auto">
+                    <div className="w-auto md:w-[140px] shrink-0 overflow-hidden">
+                      <span className={cn("text-lg md:text-2xl font-bold tracking-tighter truncate block", isSelected ? "text-emerald-400" : "text-white")}>
+                        {data.name}
+                      </span>
                     </div>
-                  </div>
-                  <div className="w-[45px] md:w-[65px] shrink-0">
-                    <div className={cn("text-[10px] md:text-xs font-black px-2 py-0.5 rounded border text-center", isSelected ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400" : "bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60")}>
-                      %{weight.toFixed(1)}
+                    <div className="w-auto md:w-[110px] shrink-0">
+                      <div className={cn("text-[10px] md:text-xs font-black uppercase px-2 py-0.5 rounded border tracking-tighter text-center truncate", isSelected ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400" : "bg-white/5 border-white/10 text-white/50")}>
+                        {data.amount.toLocaleString('tr-TR')} {data.amount === 1 ? 'VRLK' : 'VRLK'}
+                      </div>
+                    </div>
+                    <div className="w-auto md:w-[65px] shrink-0">
+                      <div className={cn("text-[10px] md:text-xs font-black px-2 py-0.5 rounded border text-center", isSelected ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400" : "bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60")}>
+                        %{weight.toFixed(1)}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-row items-center flex-1 overflow-hidden">
-                    {/* BOŞLUK (Verileri Sağa İtmek İçin) */}
-                    <div className="flex-1" />
+                  <div className="flex flex-row items-center w-full md:flex-1 overflow-hidden">
+                    {/* BOŞLUK (Masaüstünde Verileri Sağa İtmek İçin) */}
+                    <div className="hidden md:block flex-1" />
 
-                    {/* FİYAT REZERVASYONU (Hizalama İçin) */}
-                    <div className="w-[80px] md:w-[140px] shrink-0" />
+                    {/* FİYAT REZERVASYONU (Masaüstü Hizalama İçin) */}
+                    <div className="hidden md:block md:w-[140px] shrink-0" />
                     
                     {/* KAR / ZARAR GRUBU */}
-                    <div className="flex flex-row gap-x-4 md:gap-x-8 mr-4 md:mr-8">
-                      <div className="w-[100px] md:w-[150px] shrink-0 text-right">
+                    <div className="flex flex-row w-full md:w-auto justify-between md:justify-end gap-x-4 md:gap-x-8 md:mr-8">
+                      <div className="w-auto md:w-[150px] shrink-0 text-right">
                         <ValueColumn value={data.dailyGain} percent={dailyPercent} />
                       </div>
-                      <div className="w-[100px] md:w-[150px] shrink-0 text-right">
+                      <div className="w-auto md:w-[150px] shrink-0 text-right">
                         <ValueColumn value={data.totalGain} percent={pnlPercent} />
                       </div>
                     </div>
                   </div>
-                  <div className="w-[90px] md:w-[160px] flex shrink-0 justify-end text-lg md:text-2xl font-mono font-bold tracking-tighter text-white">
+                  <div className="w-full md:w-[160px] flex shrink-0 justify-end text-lg md:text-2xl font-mono font-bold tracking-tighter text-white mt-2 md:mt-0">
                     ₺{data.totalValue.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
                   </div>
                 </RowWrapper>
@@ -276,42 +278,45 @@ export function PortfolioOverview() {
                     }
                   }}
                 >
-                  <div className="w-[80px] md:w-[140px] shrink-0 overflow-hidden">
-                    <span className="text-lg md:text-2xl font-bold tracking-tighter text-white truncate block">
-                      {item.symbol === 'GC=F' ? 'Altın' : 
-                       item.symbol === 'SI=F' ? 'Gümüş' : 
-                       item.symbol === 'USDTRY=X' ? 'Amerikan Doları' :
-                       item.symbol === 'EURTRY=X' ? 'Euro' :
-                       item.symbol.replace('.IS', '').replace('-USD', '')}
-                    </span>
-                  </div>
-                  <div className="w-[80px] md:w-[110px] shrink-0">
-                    <div className="text-[10px] md:text-xs font-black uppercase px-2 py-0.5 rounded border tracking-tighter text-center truncate bg-blue-500/10 border-blue-500/20 text-blue-400">
-                      {item.totalAmount.toLocaleString('tr-TR')} ADET
+                  <div className="flex flex-row items-center gap-2 md:contents w-full md:w-auto">
+                    <div className="w-auto md:w-[140px] shrink-0 overflow-hidden">
+                      <span className="text-lg md:text-2xl font-bold tracking-tighter text-white truncate block">
+                        {item.symbol === 'GC=F' ? 'Altın' : 
+                         item.symbol === 'SI=F' ? 'Gümüş' : 
+                         item.symbol === 'USDTRY=X' ? 'Amerikan Doları' :
+                         item.symbol === 'EURTRY=X' ? 'Euro' :
+                         item.symbol.replace('.IS', '').replace('-USD', '')}
+                      </span>
+                    </div>
+                    <div className="w-auto md:w-[110px] shrink-0">
+                      <div className="text-[10px] md:text-xs font-black uppercase px-2 py-0.5 rounded border tracking-tighter text-center truncate bg-blue-500/10 border-blue-500/20 text-blue-400">
+                        {item.totalAmount.toLocaleString('tr-TR')} ADET
+                      </div>
+                    </div>
+                    <div className="w-auto md:w-[65px] shrink-0">
+                      <div className="text-[10px] md:text-xs font-black px-2 py-0.5 rounded border text-center bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60">
+                        %{weight.toFixed(1)}
+                      </div>
                     </div>
                   </div>
-                  <div className="w-[45px] md:w-[65px] shrink-0">
-                    <div className="text-[10px] md:text-xs font-black px-2 py-0.5 rounded border text-center bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60">
-                      %{weight.toFixed(1)}
-                    </div>
-                  </div>
-                  <div className="flex flex-row items-center flex-1 overflow-hidden">
-                    {/* BOŞLUK (Verileri Sağa İtmek İçin) */}
-                    <div className="flex-1" />
+
+                  <div className="flex flex-row items-center w-full md:flex-1 overflow-hidden">
+                    {/* BOŞLUK (Masaüstünde Verileri Sağa İtmek İçin) */}
+                    <div className="hidden md:block flex-1" />
 
                     {/* FİYAT SÜTUNU */}
-                    <div className="w-[80px] md:w-[140px] flex shrink-0 flex-col justify-center text-right">
+                    <div className="w-auto md:w-[140px] flex shrink-0 flex-col justify-center text-right mr-4 md:mr-0">
                       <span className="text-sm md:text-xl font-mono font-bold text-white whitespace-nowrap">
                         {item.currency === 'USD' ? '$' : '₺'}{currentPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
 
                     {/* KAR / ZARAR GRUBU */}
-                    <div className="flex flex-row gap-x-4 md:gap-x-8 mr-4 md:mr-8">
-                      <div className="w-[100px] md:w-[150px] shrink-0 text-right">
+                    <div className="flex flex-row w-full md:w-auto justify-between md:justify-end gap-x-4 md:gap-x-8 md:mr-8">
+                      <div className="w-auto md:w-[150px] shrink-0 text-right">
                         <ValueColumn value={dailyGainVal} percent={item.dailyChange || 0} />
                       </div>
-                      <div className="w-[100px] md:w-[150px] shrink-0 text-right">
+                      <div className="w-auto md:w-[150px] shrink-0 text-right">
                         <ValueColumn value={value - cost} percent={avgPurchasePrice > 0 ? ((currentPrice - avgPurchasePrice)/avgPurchasePrice)*100 : 0} />
                       </div>
                     </div>
@@ -412,14 +417,17 @@ function RowWrapper({ children, isSelected, onClick, activeColor, className, sho
 }
 
 function ValueColumn({ value, percent }: any) {
+  const isPositive = value >= 0;
   return (
     <div className={cn(
-      "whitespace-nowrap text-base md:text-xl font-bold font-mono tracking-tighter text-right", 
-      value >= 0 ? "text-emerald-500" : "text-red-500"
+      "whitespace-nowrap text-base md:text-xl font-bold font-mono tracking-tighter text-right flex flex-col items-end leading-none", 
+      isPositive ? "text-emerald-500" : "text-red-500"
     )}>
-      {value >= 0 ? '+' : ''}₺{value.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
-      <div className="text-[10px] md:text-xs font-black opacity-70 leading-none">
-        {percent >= 0 ? '+' : ''}{percent.toFixed(2)}%
+      <span className="whitespace-nowrap">
+        {isPositive ? '+' : ''}₺{Math.abs(value).toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
+      </span>
+      <div className="text-[10px] md:text-xs font-black opacity-70 mt-0.5">
+        ({isPositive ? '+' : ''}{percent.toFixed(1)}%)
       </div>
     </div>
   );
@@ -469,35 +477,37 @@ function AccountSummaryItem({ data, isIncluded, isSelected, weight, onSelect, on
 
   return (
     <RowWrapper isSelected={isSelected} onClick={onSelect} activeColor="amber" isIncluded={isIncluded} showToggle onToggle={onToggle} showDelete onDelete={onDelete}>
-      <div className="w-[80px] md:w-[140px] shrink-0 overflow-hidden">
-        <span className={cn("text-lg md:text-2xl font-bold tracking-tighter truncate block", isSelected ? "text-amber-500" : "text-white")}>
-          {data.accountName}
-        </span>
-      </div>
-      <div className="w-[80px] md:w-[110px] shrink-0">
-        <div className={cn("text-[10px] md:text-xs font-black uppercase px-2 py-0.5 rounded border tracking-tighter text-center truncate", isSelected ? "bg-amber-500/20 border-amber-500/30 text-amber-500" : "bg-white/5 border-white/10 text-white/50")}>
-          {data.amount.toLocaleString('tr-TR')} ADET
+      <div className="flex flex-row items-center gap-2 md:contents w-full md:w-auto">
+        <div className="w-auto md:w-[140px] shrink-0 overflow-hidden">
+          <span className={cn("text-lg md:text-2xl font-bold tracking-tighter truncate block", isSelected ? "text-amber-500" : "text-white")}>
+            {data.accountName}
+          </span>
         </div>
-      </div>
-      <div className="w-[45px] md:w-[65px] shrink-0">
-        <div className={cn("text-[10px] md:text-xs font-black px-2 py-0.5 rounded border text-center", isSelected ? "bg-amber-500/20 border-amber-500/30 text-amber-500" : "bg-amber-500/5 border-amber-500/10 text-amber-500/60")}>
-          %{weight.toFixed(1)}
+        <div className="w-auto md:w-[110px] shrink-0">
+          <div className={cn("text-[10px] md:text-xs font-black uppercase px-2 py-0.5 rounded border tracking-tighter text-center truncate", isSelected ? "bg-amber-500/20 border-amber-500/30 text-amber-500" : "bg-white/5 border-white/10 text-white/50")}>
+            {data.amount.toLocaleString('tr-TR')} {data.amount === 1 ? 'VRLK' : 'VRLK'}
+          </div>
+        </div>
+        <div className="w-auto md:w-[65px] shrink-0">
+          <div className={cn("text-[10px] md:text-xs font-black px-2 py-0.5 rounded border text-center", isSelected ? "bg-amber-500/20 border-amber-500/30 text-amber-500" : "bg-amber-500/5 border-amber-500/10 text-amber-500/60")}>
+            %{weight.toFixed(1)}
+          </div>
         </div>
       </div>
 
       <div className="flex flex-row items-center flex-1 overflow-hidden">
-        {/* BOŞLUK (Verileri Sağa İtmek İçin) */}
-        <div className="flex-1" />
+        {/* BOŞLUK (Masaüstünde Verileri Sağa İtmek İçin) */}
+        <div className="hidden md:block flex-1" />
 
-        {/* FİYAT REZERVASYONU (Hizalama İçin) */}
-        <div className="w-[80px] md:w-[140px] shrink-0" />
+        {/* FİYAT REZERVASYONU (Masaüstü Hizalama İçin) */}
+        <div className="hidden md:block md:w-[140px] shrink-0" />
         
         {/* KAR / ZARAR GRUBU */}
-        <div className="flex flex-row gap-x-4 md:gap-x-8 mr-4 md:mr-8">
-          <div className="w-[100px] md:w-[150px] shrink-0 text-right">
+        <div className="flex flex-row w-full md:w-auto justify-between md:justify-end gap-x-4 md:gap-x-8 md:mr-8">
+          <div className="w-auto md:w-[150px] shrink-0 text-right">
             <ValueColumn value={data.dailyGain} percent={dailyPercent} />
           </div>
-          <div className="w-[100px] md:w-[150px] shrink-0 text-right">
+          <div className="w-auto md:w-[150px] shrink-0 text-right">
             <ValueColumn value={data.totalGain} percent={pnlPercent} />
           </div>
         </div>
