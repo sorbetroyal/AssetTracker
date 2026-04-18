@@ -174,15 +174,21 @@ export function PortfolioOverview() {
               const isSelected = selectedAssetType === data.rawType;
               return (
                 <RowWrapper key={data.rawType} isSelected={isSelected} onClick={() => setSelectedAssetType(isSelected ? null : data.rawType)} activeColor="emerald">
-                  <div className="flex-[3] flex items-center gap-4">
-                    <span className={cn("text-2xl font-bold tracking-tighter truncate w-[160px]", isSelected ? "text-emerald-400" : "text-white")}>{data.name}</span>
+                  <div className="w-[100px] md:w-[250px] flex shrink-0 items-center gap-2 md:gap-4 overflow-hidden">
+                    <span className={cn("text-lg md:text-2xl font-bold tracking-tighter truncate", isSelected ? "text-emerald-400" : "text-white")}>{data.name}</span>
                     <BadgeGroup amount={data.amount} weight={weight} isSelected={isSelected} color="emerald" />
                   </div>
-                  <div className="flex flex-row gap-x-4">
-                    <ValueColumn value={data.dailyGain} percent={dailyPercent} />
-                    <ValueColumn value={data.totalGain} percent={pnlPercent} />
+                  <div className="flex flex-row items-center flex-1 gap-x-4 md:gap-x-12 overflow-hidden">
+                    {/* FİYAT REZERVASYONU (Hizalama İçin) */}
+                    <div className="w-[80px] md:w-[140px] shrink-0" />
+                    
+                    {/* KAR / ZARAR GRUBU */}
+                    <div className="flex flex-row gap-x-4 md:gap-x-8">
+                      <ValueColumn value={data.dailyGain} percent={dailyPercent} />
+                      <ValueColumn value={data.totalGain} percent={pnlPercent} />
+                    </div>
                   </div>
-                  <div className="flex-[1] text-right text-2xl font-mono font-bold tracking-tighter text-white">
+                  <div className="w-[90px] md:w-[160px] flex shrink-0 justify-end text-lg md:text-2xl font-mono font-bold tracking-tighter text-white">
                     ₺{data.totalValue.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
                   </div>
                 </RowWrapper>
@@ -250,17 +256,17 @@ export function PortfolioOverview() {
                     }
                   }}
                 >
-                  <div className="flex-[3] flex items-center gap-3 md:gap-4">
-                    <span className="text-lg md:text-2xl font-bold tracking-tighter text-white truncate max-w-[120px] md:max-w-[200px]">
+                  <div className="w-[100px] md:w-[250px] flex shrink-0 items-center gap-2 md:gap-4 overflow-hidden">
+                    <span className="text-lg md:text-2xl font-bold tracking-tighter text-white truncate">
                       {item.symbol === 'GC=F' ? 'Altın' : 
                        item.symbol === 'SI=F' ? 'Gümüş' : 
                        item.symbol.replace('.IS', '').replace('-USD', '')}
                     </span>
                     <BadgeGroup amount={item.totalAmount} weight={weight} isAsset />
                   </div>
-                  <div className="flex flex-row items-center flex-[3] gap-x-8 md:gap-x-16">
-                    {/* FİYAT SÜTUNU */}
-                    <div className="flex flex-col justify-center min-w-[80px]">
+                  <div className="flex flex-row items-center flex-1 gap-x-4 md:gap-x-12 overflow-hidden">
+                    {/* FİYAT SÜTUNU - SABİTLENDİ */}
+                    <div className="w-[80px] md:w-[140px] flex shrink-0 flex-col justify-center">
                       <span className="text-sm md:text-xl font-mono font-bold text-white whitespace-nowrap">
                         {item.currency === 'USD' ? '$' : '₺'}{currentPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
@@ -272,7 +278,7 @@ export function PortfolioOverview() {
                       <ValueColumn value={value - cost} percent={avgPurchasePrice > 0 ? ((currentPrice - avgPurchasePrice)/avgPurchasePrice)*100 : 0} />
                     </div>
                   </div>
-                  <div className="flex-[1] text-right text-lg md:text-2xl font-mono font-bold tracking-tighter text-white">
+                  <div className="w-[90px] md:w-[160px] flex shrink-0 justify-end text-lg md:text-2xl font-mono font-bold tracking-tighter text-white">
                     ₺{value.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
                   </div>
                 </RowWrapper>
@@ -425,15 +431,21 @@ function AccountSummaryItem({ data, isIncluded, isSelected, weight, onSelect, on
 
   return (
     <RowWrapper isSelected={isSelected} onClick={onSelect} activeColor="amber" isIncluded={isIncluded} showToggle onToggle={onToggle} showDelete onDelete={onDelete}>
-      <div className="flex-[3] flex items-center gap-3 md:gap-4">
-        <span className={cn("text-lg md:text-2xl font-bold tracking-tighter truncate max-w-[120px] md:max-w-[200px]", isSelected ? "text-amber-500" : "text-white")}>{data.accountName}</span>
+      <div className="w-[100px] md:w-[250px] flex shrink-0 items-center gap-2 md:gap-4 overflow-hidden">
+        <span className={cn("text-lg md:text-2xl font-bold tracking-tighter truncate", isSelected ? "text-amber-500" : "text-white")}>{data.accountName}</span>
         <BadgeGroup amount={data.amount} weight={weight} isSelected={isSelected} color="amber" />
       </div>
-      <div className="flex flex-row gap-x-4">
-        <ValueColumn value={data.dailyGain} percent={dailyPercent} />
-        <ValueColumn value={data.totalGain} percent={pnlPercent} />
+      <div className="flex flex-row items-center flex-1 gap-x-4 md:gap-x-12 overflow-hidden">
+        {/* FİYAT REZERVASYONU (Hizalama İçin) */}
+        <div className="w-[80px] md:w-[140px] shrink-0" />
+        
+        {/* KAR / ZARAR GRUBU */}
+        <div className="flex flex-row gap-x-4 md:gap-x-8">
+          <ValueColumn value={data.dailyGain} percent={dailyPercent} />
+          <ValueColumn value={data.totalGain} percent={pnlPercent} />
+        </div>
       </div>
-      <div className="flex-[1] text-right text-2xl font-mono font-bold tracking-tighter text-white">
+      <div className="w-[90px] md:w-[160px] flex shrink-0 justify-end text-lg md:text-2xl font-mono font-bold tracking-tighter text-white">
         ₺{data.totalValue.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
       </div>
     </RowWrapper>
