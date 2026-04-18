@@ -178,12 +178,15 @@ export function PortfolioOverview() {
                     <span className={cn("text-lg md:text-2xl font-bold tracking-tighter truncate", isSelected ? "text-emerald-400" : "text-white")}>{data.name}</span>
                     <BadgeGroup amount={data.amount} weight={weight} isSelected={isSelected} color="emerald" />
                   </div>
-                  <div className="flex flex-row items-center flex-1 gap-x-4 md:gap-x-12 overflow-hidden">
+                  <div className="flex flex-row items-center flex-1 overflow-hidden">
                     {/* FİYAT REZERVASYONU (Hizalama İçin) */}
                     <div className="w-[80px] md:w-[140px] shrink-0" />
                     
+                    {/* BOŞLUK (Sağa İtmek İçin) */}
+                    <div className="flex-1" />
+
                     {/* KAR / ZARAR GRUBU */}
-                    <div className="flex flex-row gap-x-4 md:gap-x-8">
+                    <div className="flex flex-row gap-x-4 md:gap-x-8 mr-4 md:mr-8">
                       <ValueColumn value={data.dailyGain} percent={dailyPercent} />
                       <ValueColumn value={data.totalGain} percent={pnlPercent} />
                     </div>
@@ -264,16 +267,19 @@ export function PortfolioOverview() {
                     </span>
                     <BadgeGroup amount={item.totalAmount} weight={weight} isAsset />
                   </div>
-                  <div className="flex flex-row items-center flex-1 gap-x-4 md:gap-x-12 overflow-hidden">
-                    {/* FİYAT SÜTUNU - SABİTLENDİ */}
+                  <div className="flex flex-row items-center flex-1 overflow-hidden">
+                    {/* FİYAT SÜTUNU */}
                     <div className="w-[80px] md:w-[140px] flex shrink-0 flex-col justify-center">
                       <span className="text-sm md:text-xl font-mono font-bold text-white whitespace-nowrap">
                         {item.currency === 'USD' ? '$' : '₺'}{currentPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
 
+                    {/* BOŞLUK (Sağa İtmek İçin) */}
+                    <div className="flex-1" />
+
                     {/* KAR / ZARAR GRUBU */}
-                    <div className="flex flex-row gap-x-4 md:gap-x-8">
+                    <div className="flex flex-row gap-x-4 md:gap-x-8 mr-4 md:mr-8">
                       <ValueColumn value={dailyGainVal} percent={item.dailyChange || 0} />
                       <ValueColumn value={value - cost} percent={avgPurchasePrice > 0 ? ((currentPrice - avgPurchasePrice)/avgPurchasePrice)*100 : 0} />
                     </div>
@@ -435,12 +441,15 @@ function AccountSummaryItem({ data, isIncluded, isSelected, weight, onSelect, on
         <span className={cn("text-lg md:text-2xl font-bold tracking-tighter truncate", isSelected ? "text-amber-500" : "text-white")}>{data.accountName}</span>
         <BadgeGroup amount={data.amount} weight={weight} isSelected={isSelected} color="amber" />
       </div>
-      <div className="flex flex-row items-center flex-1 gap-x-4 md:gap-x-12 overflow-hidden">
+      <div className="flex flex-row items-center flex-1 overflow-hidden">
         {/* FİYAT REZERVASYONU (Hizalama İçin) */}
         <div className="w-[80px] md:w-[140px] shrink-0" />
         
+        {/* BOŞLUK (Sağa İtmek İçin) */}
+        <div className="flex-1" />
+
         {/* KAR / ZARAR GRUBU */}
-        <div className="flex flex-row gap-x-4 md:gap-x-8">
+        <div className="flex flex-row gap-x-4 md:gap-x-8 mr-4 md:mr-8">
           <ValueColumn value={data.dailyGain} percent={dailyPercent} />
           <ValueColumn value={data.totalGain} percent={pnlPercent} />
         </div>
