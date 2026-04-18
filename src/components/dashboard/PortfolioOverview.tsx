@@ -359,9 +359,14 @@ function RowWrapper({ children, isSelected, onClick, activeColor, className, sho
 
 function ValueColumn({ value, percent }: any) {
   return (
-    <div className={cn("flex-[1] text-lg md:text-xl font-bold font-mono tracking-tighter", value >= 0 ? "text-emerald-500" : "text-red-500")}>
+    <div className={cn(
+      "flex-1 whitespace-nowrap text-base md:text-xl font-bold font-mono tracking-tighter", 
+      value >= 0 ? "text-emerald-500" : "text-red-500"
+    )}>
       {value >= 0 ? '+' : ''}₺{value.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
-      <span className="text-[10px] md:text-sm font-black ml-2 opacity-70">({value >= 0 ? '+' : ''}{percent.toFixed(2)}%)</span>
+      <span className="text-[10px] md:text-sm font-black ml-1.5 opacity-70">
+        ({value >= 0 ? '+' : ''}{percent.toFixed(2)}%)
+      </span>
     </div>
   );
 }
