@@ -309,7 +309,7 @@ function RowWrapper({ children, isSelected, onClick, activeColor, className, sho
       onClick={confirmDelete ? undefined : onClick}
       className={cn(
       "group relative flex flex-col md:flex-row md:items-center gap-2 md:gap-4 p-4 md:pl-8 md:pr-32 md:py-4 rounded-2xl border transition-all overflow-hidden",
-      !isIncluded ? "opacity-30 grayscale border-white/5 bg-transparent" : isSelected ? cn("bg-zinc-800/80 scale-[1.005] z-10", colorMap[activeColor]) : "bg-zinc-900/40 border-white/5 hover:bg-zinc-900/80",
+      !isIncluded ? "opacity-30 grayscale border-white/5 bg-transparent" : isSelected ? cn("bg-zinc-800/80 scale-[1.005] z-10", colorMap[activeColor]) : "even:bg-zinc-900/40 odd:bg-transparent border-white/5 hover:bg-zinc-800 hover:border-white/20 hover:shadow-[0_0_20px_rgba(255,255,255,0.03)]",
       className
     )}>
       {children}

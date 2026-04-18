@@ -14,7 +14,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export function AssetTable() {
-  const { assets, removeAsset, triggerRefresh, lastUpdated, isUpdating } = useAssetStore();
+  const { assets, removeAsset } = useAssetStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<any>(null);
 
@@ -59,40 +59,7 @@ export function AssetTable() {
         editingAsset={editingAsset}
       />
 
-      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center bg-zinc-900/40 p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-white/5 backdrop-blur-xl shadow-2xl gap-4 md:gap-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col md:flex-row items-center md:items-center gap-3 md:gap-6">
-            <h1 className="text-xl md:text-3xl font-black text-zinc-100 tracking-tighter italic leading-none">Hedef Takip</h1>
-            
-            <div className="flex flex-col items-center sm:items-start gap-1">
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => triggerRefresh()}
-                  disabled={isUpdating}
-                  className={cn(
-                    "px-3 py-1.5 md:px-4 md:py-1.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-[10px] md:text-sm font-black text-zinc-300 hover:text-white transition-all uppercase tracking-widest flex items-center gap-2 active:scale-95 shadow-lg",
-                    isUpdating && "opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  <svg className={cn("w-3 h-3 md:w-4 md:h-4", isUpdating && "animate-spin")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  {isUpdating ? 'GÜNCELLENİYOR...' : 'GÜNCELLE'}
-                </button>
-                {lastUpdated && <span className="hidden sm:inline text-xs font-black text-zinc-400 uppercase tracking-widest">SON GÜNCELLEME: {lastUpdated}</span>}
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-3 px-8 py-4 bg-white text-black rounded-2xl font-black text-xs md:text-sm transition-all hover:scale-[1.05] active:scale-95 group uppercase tracking-widest"
-        >
-          <Plus size={18} />
-          TAKİP LİSTESİNE EKLE
-        </button>
-      </div>
+
 
       <MarketPulse />
 
@@ -120,27 +87,36 @@ export function AssetTable() {
         </section>
       )}
 
-      {myAssets.length > 0 && (
-        <section className="flex flex-col gap-4 px-4">
-          <div className="flex flex-wrap gap-3">
-            {myAssets.map((asset) => (
-              <button 
-                key={asset.id} 
-                onClick={() => {
-                  setEditingAsset(asset);
-                  setIsModalOpen(true);
-                }}
-                className="px-4 py-2.5 bg-zinc-900/60 border border-white/5 rounded-2xl hover:border-amber-500/40 hover:bg-amber-500/5 transition-all flex items-center gap-2 shadow-xl group"
-              >
-                <Plus size={12} className="text-amber-500/50 group-hover:text-amber-500 transition-colors" />
-                <span className="text-xs font-black text-zinc-400 group-hover:text-zinc-100 uppercase tracking-tighter italic">
-                  {asset.symbol.replace('.IS', '').replace('-USD', '')}
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+      <section className="flex flex-col gap-4 px-4">
+        <div className="flex flex-wrap gap-3">
+          <button 
+            onClick={() => {
+              setEditingAsset(null);
+              setIsModalOpen(true);
+            }}
+            className="px-4 py-2.5 bg-blue-500/5 hover:bg-blue-500/15 border border-blue-500/30 text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.1)] rounded-2xl transition-all flex items-center gap-2 active:scale-95 group"
+          >
+            <Plus size={12} strokeWidth={3} className="text-blue-500 group-hover:text-blue-400 transition-colors" />
+            <span className="text-xs font-black uppercase tracking-widest group-hover:text-blue-400 transition-colors">Ekle</span>
+          </button>
+          
+          {myAssets.map((asset) => (
+            <button 
+              key={asset.id} 
+              onClick={() => {
+                setEditingAsset(asset);
+                setIsModalOpen(true);
+              }}
+              className="px-4 py-2.5 bg-zinc-900/60 border border-white/5 rounded-2xl hover:border-amber-500/40 hover:bg-amber-500/5 transition-all flex items-center gap-2 shadow-xl group"
+            >
+              <Plus size={12} className="text-amber-500/50 group-hover:text-amber-500 transition-colors" />
+              <span className="text-xs font-black text-zinc-400 group-hover:text-zinc-100 uppercase tracking-tighter italic">
+                {asset.symbol.replace('.IS', '').replace('-USD', '')}
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section className="flex flex-col gap-6">
         {assets.length === 0 ? (

@@ -3,6 +3,8 @@ import { useAssetStore } from '@/store/useAssetStore';
 
 export function usePriceData() {
   const { updateAssetPrice, updatePortfolioPrice, updateIndices, updateRates, refreshCount, setLastUpdated, setIsUpdating } = useAssetStore();
+  const assetsLength = useAssetStore(state => state.assets.length);
+  const portfolioLength = useAssetStore(state => state.portfolioHoldings.length);
 
   const fetchPrices = useCallback(async () => {
     setIsUpdating(true);
@@ -75,7 +77,7 @@ export function usePriceData() {
     fetchPrices();
     const interval = setInterval(fetchPrices, 60000); // 1 dakikada bir güncelle
     return () => clearInterval(interval);
-  }, [fetchPrices, refreshCount]);
+  }, [fetchPrices, refreshCount, assetsLength, portfolioLength]);
 
   return { refresh: fetchPrices };
 }
