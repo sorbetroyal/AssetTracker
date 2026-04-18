@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '../../../lib/supabase';
+import { supabase } from '@/lib/supabase';
 import YahooFinance from 'yahoo-finance2';
 
-const yf = new (YahooFinance as any)();
+const yf = new YahooFinance();
 
 async function fetchFundsFromSupabase(symbols: string[]): Promise<any[]> {
   try {
