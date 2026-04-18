@@ -37,11 +37,22 @@ CREATE TABLE portfolio (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 5. RLS ve Politikalar
+-- 5. Asset Fiyat Önbelleği (Offline Scraper için)
+CREATE TABLE asset_prices (
+    symbol TEXT PRIMARY KEY,
+    price DOUBLE PRECISION NOT NULL,
+    daily_change DOUBLE PRECISION DEFAULT 0,
+    source TEXT DEFAULT 'borsapy',
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 6. RLS ve Politikalar
 ALTER TABLE assets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE portfolio ENABLE ROW LEVEL SECURITY;
+ALTER TABLE asset_prices ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow public access for assets" ON assets FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow public access for accounts" ON accounts FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow public access for portfolio" ON portfolio FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow public access for asset_prices" ON asset_prices FOR ALL USING (true) WITH CHECK (true);
