@@ -258,14 +258,19 @@ export function PortfolioOverview() {
                     </span>
                     <BadgeGroup amount={item.totalAmount} weight={weight} isAsset />
                   </div>
-                  <div className="flex flex-row gap-x-8">
-                    <div className="flex-[0.8] hidden md:flex flex-col justify-center">
-                      <span className="text-sm md:text-lg font-mono font-bold text-zinc-300">
-                        {item.currency === 'USD' ? '$' : '₺'}{currentPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                  <div className="flex flex-row items-center flex-[3] gap-x-8 md:gap-x-16">
+                    {/* FİYAT SÜTUNU */}
+                    <div className="flex flex-col justify-center min-w-[80px]">
+                      <span className="text-sm md:text-xl font-mono font-bold text-white whitespace-nowrap">
+                        {item.currency === 'USD' ? '$' : '₺'}{currentPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
-                    <ValueColumn value={dailyGainVal} percent={item.dailyChange || 0} />
-                    <ValueColumn value={value - cost} percent={avgPurchasePrice > 0 ? ((currentPrice - avgPurchasePrice)/avgPurchasePrice)*100 : 0} />
+
+                    {/* KAR / ZARAR GRUBU */}
+                    <div className="flex flex-row gap-x-4 md:gap-x-8">
+                      <ValueColumn value={dailyGainVal} percent={item.dailyChange || 0} />
+                      <ValueColumn value={value - cost} percent={avgPurchasePrice > 0 ? ((currentPrice - avgPurchasePrice)/avgPurchasePrice)*100 : 0} />
+                    </div>
                   </div>
                   <div className="flex-[1] text-right text-lg md:text-2xl font-mono font-bold tracking-tighter text-white">
                     ₺{value.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
