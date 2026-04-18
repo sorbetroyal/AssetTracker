@@ -174,10 +174,22 @@ export function PortfolioOverview() {
               const isSelected = selectedAssetType === data.rawType;
               return (
                 <RowWrapper key={data.rawType} isSelected={isSelected} onClick={() => setSelectedAssetType(isSelected ? null : data.rawType)} activeColor="emerald">
-                  <div className="w-[100px] md:w-[250px] flex shrink-0 items-center gap-2 md:gap-4 overflow-hidden">
-                    <span className={cn("text-lg md:text-2xl font-bold tracking-tighter truncate", isSelected ? "text-emerald-400" : "text-white")}>{data.name}</span>
-                    <BadgeGroup amount={data.amount} weight={weight} isSelected={isSelected} color="emerald" />
+                  <div className="w-[80px] md:w-[140px] shrink-0 overflow-hidden">
+                    <span className={cn("text-lg md:text-2xl font-bold tracking-tighter truncate block", isSelected ? "text-emerald-400" : "text-white")}>
+                      {data.name}
+                    </span>
                   </div>
+                  <div className="w-[80px] md:w-[110px] shrink-0">
+                    <div className={cn("text-[10px] md:text-xs font-black uppercase px-2 py-0.5 rounded border tracking-tighter text-center truncate", isSelected ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400" : "bg-white/5 border-white/10 text-white/50")}>
+                      {data.amount.toLocaleString('tr-TR')} ADET
+                    </div>
+                  </div>
+                  <div className="w-[45px] md:w-[65px] shrink-0">
+                    <div className={cn("text-[10px] md:text-xs font-black px-2 py-0.5 rounded border text-center", isSelected ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400" : "bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60")}>
+                      %{weight}
+                    </div>
+                  </div>
+
                   <div className="flex flex-row items-center flex-1 overflow-hidden">
                     {/* BOŞLUK (Verileri Sağa İtmek İçin) */}
                     <div className="flex-1" />
@@ -263,13 +275,22 @@ export function PortfolioOverview() {
                     }
                   }}
                 >
-                  <div className="w-[100px] md:w-[250px] flex shrink-0 items-center gap-2 md:gap-4 overflow-hidden">
-                    <span className="text-lg md:text-2xl font-bold tracking-tighter text-white truncate">
+                  <div className="w-[80px] md:w-[140px] shrink-0 overflow-hidden">
+                    <span className="text-lg md:text-2xl font-bold tracking-tighter text-white truncate block">
                       {item.symbol === 'GC=F' ? 'Altın' : 
                        item.symbol === 'SI=F' ? 'Gümüş' : 
                        item.symbol.replace('.IS', '').replace('-USD', '')}
                     </span>
-                    <BadgeGroup amount={item.totalAmount} weight={weight} isAsset />
+                  </div>
+                  <div className="w-[80px] md:w-[110px] shrink-0">
+                    <div className="text-[10px] md:text-xs font-black uppercase px-2 py-0.5 rounded border tracking-tighter text-center truncate bg-blue-500/10 border-blue-500/20 text-blue-400">
+                      {item.totalAmount.toLocaleString('tr-TR')} ADET
+                    </div>
+                  </div>
+                  <div className="w-[45px] md:w-[65px] shrink-0">
+                    <div className="text-[10px] md:text-xs font-black px-2 py-0.5 rounded border text-center bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60">
+                      %{weight.toFixed(1)}
+                    </div>
                   </div>
                   <div className="flex flex-row items-center flex-1 overflow-hidden">
                     {/* BOŞLUK (Verileri Sağa İtmek İçin) */}
@@ -445,10 +466,22 @@ function AccountSummaryItem({ data, isIncluded, isSelected, weight, onSelect, on
 
   return (
     <RowWrapper isSelected={isSelected} onClick={onSelect} activeColor="amber" isIncluded={isIncluded} showToggle onToggle={onToggle} showDelete onDelete={onDelete}>
-      <div className="w-[100px] md:w-[250px] flex shrink-0 items-center gap-2 md:gap-4 overflow-hidden">
-        <span className={cn("text-lg md:text-2xl font-bold tracking-tighter truncate", isSelected ? "text-amber-500" : "text-white")}>{data.accountName}</span>
-        <BadgeGroup amount={data.amount} weight={weight} isSelected={isSelected} color="amber" />
+      <div className="w-[80px] md:w-[140px] shrink-0 overflow-hidden">
+        <span className={cn("text-lg md:text-2xl font-bold tracking-tighter truncate block", isSelected ? "text-amber-500" : "text-white")}>
+          {data.accountName}
+        </span>
       </div>
+      <div className="w-[80px] md:w-[110px] shrink-0">
+        <div className={cn("text-[10px] md:text-xs font-black uppercase px-2 py-0.5 rounded border tracking-tighter text-center truncate", isSelected ? "bg-amber-500/20 border-amber-500/30 text-amber-500" : "bg-white/5 border-white/10 text-white/50")}>
+          {data.amount.toLocaleString('tr-TR')} ADET
+        </div>
+      </div>
+      <div className="w-[45px] md:w-[65px] shrink-0">
+        <div className={cn("text-[10px] md:text-xs font-black px-2 py-0.5 rounded border text-center", isSelected ? "bg-amber-500/20 border-amber-500/30 text-amber-500" : "bg-amber-500/5 border-amber-500/10 text-amber-500/60")}>
+          %{weight}
+        </div>
+      </div>
+
       <div className="flex flex-row items-center flex-1 overflow-hidden">
         {/* BOŞLUK (Verileri Sağa İtmek İçin) */}
         <div className="flex-1" />
