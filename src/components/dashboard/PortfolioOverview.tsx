@@ -224,7 +224,7 @@ export function PortfolioOverview() {
               const avgPurchasePrice = item.totalCostBasis / item.totalAmount;
               
               const value = (item.totalAmount * currentPrice) * (isUSD ? usdRate : 1);
-              const cost = (item.amount * avgPurchasePrice || item.totalCostBasis) * (isUSD ? usdRate : 1);
+              const cost = (item.totalCostBasis) * (isUSD ? usdRate : 1);
               
               const dailyGainVal = item.dailyChange ? (value * item.dailyChange) / 100 : 0;
               
@@ -376,12 +376,12 @@ function RowWrapper({ children, isSelected, onClick, activeColor, className, sho
 function ValueColumn({ value, percent }: any) {
   return (
     <div className={cn(
-      "flex-1 whitespace-nowrap text-base md:text-xl font-bold font-mono tracking-tighter", 
+      "whitespace-nowrap text-base md:text-xl font-bold font-mono tracking-tighter", 
       value >= 0 ? "text-emerald-500" : "text-red-500"
     )}>
       {value >= 0 ? '+' : ''}₺{value.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
       <span className="text-[10px] md:text-sm font-black ml-1.5 opacity-70">
-        ({value >= 0 ? '+' : ''}{percent.toFixed(2)}%)
+        ({percent >= 0 ? '+' : ''}{percent.toFixed(2)}%)
       </span>
     </div>
   );
