@@ -274,6 +274,21 @@ export const useAssetStore = create<AssetStore>()(
             accounts: state.accounts.filter(a => a.id !== id),
             portfolioHoldings: state.portfolioHoldings.filter(h => h.accountId !== id)
           }));
+
+          // HESAP SİLİNDİĞİNDE YETİM "CHIP"LERİ (HEDEFİ OLMAYAN VARLIKLAR) TEMİZLE
+          const { assets, portfolioHoldings } = get();
+          const orphanedChips = assets.filter(a => 
+            a.targetPrice === 0 && 
+            !portfolioHoldings.some(h => 
+              h.symbol === a.symbol || 
+              h.symbol.replace('.IS', '') === a.symbol.replace('.IS', '')
+            )
+          );
+
+          for (const chip of orphanedChips) {
+            await supabase.from('assets').delete().eq('id', chip.id);
+            set(state => ({ assets: state.assets.filter(a => a.id !== chip.id) }));
+          }
         }
       },
 
@@ -368,7 +383,24 @@ export const useAssetStore = create<AssetStore>()(
 
       removePortfolioItem: async (id) => {
         const { error } = await supabase.from('portfolio').delete().eq('id', id);
-        if (!error) set((state) => ({ portfolioHoldings: state.portfolioHoldings.filter((a) => a.id !== id) }));
+        if (!error) {
+          set((state) => ({ portfolioHoldings: state.portfolioHoldings.filter((a) => a.id !== id) }));
+
+          // VARLIK SİLİNDİĞİNDE YETİM "CHIP"LERİ TEMİZLE
+          const { assets, portfolioHoldings } = get();
+          const orphanedChips = assets.filter(a => 
+            a.targetPrice === 0 && 
+            !portfolioHoldings.some(h => 
+              h.symbol === a.symbol || 
+              h.symbol.replace('.IS', '') === a.symbol.replace('.IS', '')
+            )
+          );
+
+          for (const chip of orphanedChips) {
+            await supabase.from('assets').delete().eq('id', chip.id);
+            set(state => ({ assets: state.assets.filter(a => a.id !== chip.id) }));
+          }
+        }
       },
 
       updatePortfolioItem: async (id, updates) => {
