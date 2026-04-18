@@ -12,7 +12,7 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const assetTypeOrder = ['BIST', 'TEFAS', 'BEFAS', 'US', 'CRYPTO', 'COMMODITY'];
+const assetTypeOrder = ['BIST', 'TEFAS', 'BEFAS', 'US', 'CRYPTO', 'FOREIGN_CURRENCY', 'COMMODITY'];
 
 const assetTypeLabels: Record<string, string> = {
   'BIST': 'BIST',
@@ -20,6 +20,7 @@ const assetTypeLabels: Record<string, string> = {
   'BEFAS': 'BES Fonları',
   'US': 'ABD Borsası',
   'CRYPTO': 'Kripto',
+  'FOREIGN_CURRENCY': 'Döviz',
   'COMMODITY': 'Emtia'
 };
 
@@ -279,6 +280,8 @@ export function PortfolioOverview() {
                     <span className="text-lg md:text-2xl font-bold tracking-tighter text-white truncate block">
                       {item.symbol === 'GC=F' ? 'Altın' : 
                        item.symbol === 'SI=F' ? 'Gümüş' : 
+                       item.symbol === 'USDTRY=X' ? 'Amerikan Doları' :
+                       item.symbol === 'EURTRY=X' ? 'Euro' :
                        item.symbol.replace('.IS', '').replace('-USD', '')}
                     </span>
                   </div>

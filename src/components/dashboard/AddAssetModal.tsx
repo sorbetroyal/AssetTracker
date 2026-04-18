@@ -18,6 +18,7 @@ const typeLabels: Record<string, string> = {
   'BEFAS': 'BES Fonları',
   'US': 'ABD Borsası',
   'CRYPTO': 'Kripto',
+  'FOREIGN_CURRENCY': 'Döviz',
   'COMMODITY': 'Emtia'
 };
 
@@ -28,6 +29,7 @@ const typeColors: Record<string, string> = {
   'BEFAS': 'text-indigo-500',
   'CRYPTO': 'text-orange-500',
   'COMMODITY': 'text-yellow-500',
+  'FOREIGN_CURRENCY': 'text-cyan-400',
   'BANK': 'text-zinc-400'
 };
 
@@ -38,6 +40,7 @@ const typeBorderColors: Record<string, string> = {
   'BEFAS': 'border-indigo-500/20',
   'CRYPTO': 'border-orange-500/20',
   'COMMODITY': 'border-yellow-500/20',
+  'FOREIGN_CURRENCY': 'border-cyan-500/20',
   'BANK': 'border-zinc-500/20'
 };
 
@@ -116,7 +119,7 @@ export function AddAssetModal({ isOpen, onClose, initialType, isPortfolio = fals
     if (!isPortfolio || formData.type === 'BANK' || !formData.symbol || formData.symbol.length < 2) return;
     
     // Fiyat çekilebilir tipler
-    const autoFetchTypes = ['BIST', 'CRYPTO', 'US', 'TEFAS', 'BEFAS', 'COMMODITY'];
+    const autoFetchTypes = ['BIST', 'CRYPTO', 'US', 'TEFAS', 'BEFAS', 'COMMODITY', 'FOREIGN_CURRENCY'];
     if (!autoFetchTypes.includes(formData.type)) return;
 
     const fetchPrice = async () => {
@@ -125,6 +128,8 @@ export function AddAssetModal({ isOpen, onClose, initialType, isPortfolio = fals
       // Akıllı Sembol Eşleme
       if (lookupSymbol === 'ALTIN' || lookupSymbol === 'GOLD') lookupSymbol = 'GC=F';
       if (lookupSymbol === 'GÜMÜŞ' || lookupSymbol === 'SILVER') lookupSymbol = 'SI=F';
+      if (lookupSymbol === 'USD' || lookupSymbol === 'DOLAR') lookupSymbol = 'USDTRY=X';
+      if (lookupSymbol === 'EUR' || lookupSymbol === 'EURO') lookupSymbol = 'EURTRY=X';
 
       if (formData.type === 'BIST' && !lookupSymbol.endsWith('.IS') && lookupSymbol.length >= 3) {
         lookupSymbol = lookupSymbol.replace(/0/g, 'O') + '.IS';
@@ -180,6 +185,8 @@ export function AddAssetModal({ isOpen, onClose, initialType, isPortfolio = fals
     // Alırken de mapping uygula
     if (finalSymbol === 'ALTIN' || finalSymbol === 'GOLD') finalSymbol = 'GC=F';
     if (finalSymbol === 'GÜMÜŞ' || finalSymbol === 'SILVER') finalSymbol = 'SI=F';
+    if (finalSymbol === 'USD' || finalSymbol === 'DOLAR') finalSymbol = 'USDTRY=X';
+    if (finalSymbol === 'EUR' || finalSymbol === 'EURO') finalSymbol = 'EURTRY=X';
 
     if (formData.type === 'BIST' && !finalSymbol.endsWith('.IS')) {
       finalSymbol = finalSymbol.replace(/0/g, 'O') + '.IS';
