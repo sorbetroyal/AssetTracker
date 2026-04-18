@@ -187,8 +187,12 @@ export function PortfolioOverview() {
                     
                     {/* KAR / ZARAR GRUBU */}
                     <div className="flex flex-row gap-x-4 md:gap-x-8 mr-4 md:mr-8">
-                      <ValueColumn value={data.dailyGain} percent={dailyPercent} />
-                      <ValueColumn value={data.totalGain} percent={pnlPercent} />
+                      <div className="w-[100px] md:w-[150px] shrink-0 text-right">
+                        <ValueColumn value={data.dailyGain} percent={dailyPercent} />
+                      </div>
+                      <div className="w-[100px] md:w-[150px] shrink-0 text-right">
+                        <ValueColumn value={data.totalGain} percent={pnlPercent} />
+                      </div>
                     </div>
                   </div>
                   <div className="w-[90px] md:w-[160px] flex shrink-0 justify-end text-lg md:text-2xl font-mono font-bold tracking-tighter text-white">
@@ -272,7 +276,7 @@ export function PortfolioOverview() {
                     <div className="flex-1" />
 
                     {/* FİYAT SÜTUNU */}
-                    <div className="w-[80px] md:w-[140px] flex shrink-0 flex-col justify-center">
+                    <div className="w-[80px] md:w-[140px] flex shrink-0 flex-col justify-center text-right">
                       <span className="text-sm md:text-xl font-mono font-bold text-white whitespace-nowrap">
                         {item.currency === 'USD' ? '$' : '₺'}{currentPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
@@ -280,8 +284,12 @@ export function PortfolioOverview() {
 
                     {/* KAR / ZARAR GRUBU */}
                     <div className="flex flex-row gap-x-4 md:gap-x-8 mr-4 md:mr-8">
-                      <ValueColumn value={dailyGainVal} percent={item.dailyChange || 0} />
-                      <ValueColumn value={value - cost} percent={avgPurchasePrice > 0 ? ((currentPrice - avgPurchasePrice)/avgPurchasePrice)*100 : 0} />
+                      <div className="w-[100px] md:w-[150px] shrink-0 text-right">
+                        <ValueColumn value={dailyGainVal} percent={item.dailyChange || 0} />
+                      </div>
+                      <div className="w-[100px] md:w-[150px] shrink-0 text-right">
+                        <ValueColumn value={value - cost} percent={avgPurchasePrice > 0 ? ((currentPrice - avgPurchasePrice)/avgPurchasePrice)*100 : 0} />
+                      </div>
                     </div>
                   </div>
                   <div className="w-[90px] md:w-[160px] flex shrink-0 justify-end text-lg md:text-2xl font-mono font-bold tracking-tighter text-white">
@@ -382,13 +390,13 @@ function RowWrapper({ children, isSelected, onClick, activeColor, className, sho
 function ValueColumn({ value, percent }: any) {
   return (
     <div className={cn(
-      "whitespace-nowrap text-base md:text-xl font-bold font-mono tracking-tighter", 
+      "whitespace-nowrap text-base md:text-xl font-bold font-mono tracking-tighter text-right", 
       value >= 0 ? "text-emerald-500" : "text-red-500"
     )}>
       {value >= 0 ? '+' : ''}₺{value.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
-      <span className="text-[10px] md:text-sm font-black ml-1.5 opacity-70">
-        ({percent >= 0 ? '+' : ''}{percent.toFixed(2)}%)
-      </span>
+      <div className="text-[10px] md:text-xs font-black opacity-70 leading-none">
+        {percent >= 0 ? '+' : ''}{percent.toFixed(2)}%
+      </div>
     </div>
   );
 }
@@ -450,8 +458,12 @@ function AccountSummaryItem({ data, isIncluded, isSelected, weight, onSelect, on
         
         {/* KAR / ZARAR GRUBU */}
         <div className="flex flex-row gap-x-4 md:gap-x-8 mr-4 md:mr-8">
-          <ValueColumn value={data.dailyGain} percent={dailyPercent} />
-          <ValueColumn value={data.totalGain} percent={pnlPercent} />
+          <div className="w-[100px] md:w-[150px] shrink-0 text-right">
+            <ValueColumn value={data.dailyGain} percent={dailyPercent} />
+          </div>
+          <div className="w-[100px] md:w-[150px] shrink-0 text-right">
+            <ValueColumn value={data.totalGain} percent={pnlPercent} />
+          </div>
         </div>
       </div>
       <div className="w-[90px] md:w-[160px] flex shrink-0 justify-end text-lg md:text-2xl font-mono font-bold tracking-tighter text-white">
