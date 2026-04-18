@@ -186,7 +186,7 @@ export function PortfolioOverview() {
                   </div>
                   <div className="w-[45px] md:w-[65px] shrink-0">
                     <div className={cn("text-[10px] md:text-xs font-black px-2 py-0.5 rounded border text-center", isSelected ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400" : "bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60")}>
-                      %{weight}
+                      %{weight.toFixed(1)}
                     </div>
                   </div>
 
@@ -478,7 +478,7 @@ function AccountSummaryItem({ data, isIncluded, isSelected, weight, onSelect, on
       </div>
       <div className="w-[45px] md:w-[65px] shrink-0">
         <div className={cn("text-[10px] md:text-xs font-black px-2 py-0.5 rounded border text-center", isSelected ? "bg-amber-500/20 border-amber-500/30 text-amber-500" : "bg-amber-500/5 border-amber-500/10 text-amber-500/60")}>
-          %{weight}
+          %{weight.toFixed(1)}
         </div>
       </div>
 
