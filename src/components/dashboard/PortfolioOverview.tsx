@@ -24,7 +24,7 @@ const assetTypeLabels: Record<string, string> = {
 };
 
 export function PortfolioOverview() {
-  const { portfolioHoldings, removePortfolioItem, removePortfolioItemsBySymbol, accounts, removeAccount, toggleAccountInclusion, rates } = useAssetStore();
+  const { portfolioHoldings, removePortfolioItem, accounts, removeAccount, toggleAccountInclusion, rates } = useAssetStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<PortfolioItem['assetType'] | 'BANK'>('BIST');
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);

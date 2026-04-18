@@ -212,7 +212,7 @@ export const useAssetStore = create<AssetStore>()(
 
         if (isInPortfolio && !isChip && !alreadyHasPending && !hasOtherActiveTargets) {
           // Portföyde var VE bu son aktif hedefiyse VE henüz chip kopyası yoksa: Chip'e döndür
-          await updateAsset(id, { targetPrice: 0, strategy: '' });
+          await updateAsset(id, { targetPrice: 0 });
         } else {
           // Aktif başka hedefi varsa VEYA portföyde yoksa VEYA zaten bir chip kopyası varsa: DB'den tamamen sil
           await supabase.from('assets').delete().eq('id', id);
@@ -371,21 +371,6 @@ export const useAssetStore = create<AssetStore>()(
         if (!error) set((state) => ({ portfolioHoldings: state.portfolioHoldings.filter((a) => a.id !== id) }));
       },
 
-      removePortfolioItemsBySymbol: async (accountId, symbol) => {
-        const { error } = await supabase
-          .from('portfolio')
-          .delete()
-          .match({ account_id: accountId, symbol: symbol });
-        
-        if (!error) {
-          set(state => ({
-            portfolioHoldings: state.portfolioHoldings.filter(h => 
-              !(h.accountId === accountId && h.symbol === symbol)
-            )
-          }));
-        }
-      },
-
       updatePortfolioItem: async (id, updates) => {
         const supabaseUpdates: any = {};
         if (updates.accountId) supabaseUpdates.account_id = updates.accountId;
@@ -431,16 +416,16 @@ export const useAssetStore = create<AssetStore>()(
             a.symbol.replace('.IS', '') === sym.symbol.replace('.IS', '')
           );
           if (!exists) {
-            await addAsset({
+            const { error } = await supabase.from('assets').insert([{
               symbol: sym.symbol,
               name: sym.symbol,
               type: sym.type,
-              strategy: 'Trend Takibi',
-              targetPrice: 0,
-              entryPrice: sym.price,
-              targetPrice: 0,
-              currency: sym.currency
-            });
+              strategy: 'Kar Al',
+              entry_price: sym.price,
+              target_price: 0,
+              currency: sym.currency,
+              created_at: Date.now()
+            }]);
             addedCount++;
           }
         }

@@ -35,7 +35,7 @@ export function AssetTable() {
 
     // Akıllı Yön Belirleme: 
     // Eğer hedef fiyat, giriş fiyatından (veya mevcut fiyattan) yüksekse yukarıyı hedefliyoruzdur.
-    const isUpward = asset.targetPrice > (asset.entryPrice || asset.currentPrice);
+    const isUpward = asset.targetPrice > (asset.entryPrice || asset.currentPrice || 0);
     
     if (isUpward) {
       return referencePrice >= asset.targetPrice;
