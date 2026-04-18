@@ -179,12 +179,12 @@ export function PortfolioOverview() {
                     <BadgeGroup amount={data.amount} weight={weight} isSelected={isSelected} color="emerald" />
                   </div>
                   <div className="flex flex-row items-center flex-1 overflow-hidden">
+                    {/* BOŞLUK (Verileri Sağa İtmek İçin) */}
+                    <div className="flex-1" />
+
                     {/* FİYAT REZERVASYONU (Hizalama İçin) */}
                     <div className="w-[80px] md:w-[140px] shrink-0" />
                     
-                    {/* BOŞLUK (Sağa İtmek İçin) */}
-                    <div className="flex-1" />
-
                     {/* KAR / ZARAR GRUBU */}
                     <div className="flex flex-row gap-x-4 md:gap-x-8 mr-4 md:mr-8">
                       <ValueColumn value={data.dailyGain} percent={dailyPercent} />
@@ -268,15 +268,15 @@ export function PortfolioOverview() {
                     <BadgeGroup amount={item.totalAmount} weight={weight} isAsset />
                   </div>
                   <div className="flex flex-row items-center flex-1 overflow-hidden">
+                    {/* BOŞLUK (Verileri Sağa İtmek İçin) */}
+                    <div className="flex-1" />
+
                     {/* FİYAT SÜTUNU */}
                     <div className="w-[80px] md:w-[140px] flex shrink-0 flex-col justify-center">
                       <span className="text-sm md:text-xl font-mono font-bold text-white whitespace-nowrap">
                         {item.currency === 'USD' ? '$' : '₺'}{currentPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
-
-                    {/* BOŞLUK (Sağa İtmek İçin) */}
-                    <div className="flex-1" />
 
                     {/* KAR / ZARAR GRUBU */}
                     <div className="flex flex-row gap-x-4 md:gap-x-8 mr-4 md:mr-8">
@@ -442,12 +442,12 @@ function AccountSummaryItem({ data, isIncluded, isSelected, weight, onSelect, on
         <BadgeGroup amount={data.amount} weight={weight} isSelected={isSelected} color="amber" />
       </div>
       <div className="flex flex-row items-center flex-1 overflow-hidden">
+        {/* BOŞLUK (Verileri Sağa İtmek İçin) */}
+        <div className="flex-1" />
+
         {/* FİYAT REZERVASYONU (Hizalama İçin) */}
         <div className="w-[80px] md:w-[140px] shrink-0" />
         
-        {/* BOŞLUK (Sağa İtmek İçin) */}
-        <div className="flex-1" />
-
         {/* KAR / ZARAR GRUBU */}
         <div className="flex flex-row gap-x-4 md:gap-x-8 mr-4 md:mr-8">
           <ValueColumn value={data.dailyGain} percent={dailyPercent} />
