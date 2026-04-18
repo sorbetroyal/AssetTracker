@@ -178,7 +178,7 @@ export function PortfolioOverview() {
                     <span className={cn("text-2xl font-bold tracking-tighter truncate w-[160px]", isSelected ? "text-emerald-400" : "text-white")}>{data.name}</span>
                     <BadgeGroup amount={data.amount} weight={weight} isSelected={isSelected} color="emerald" />
                   </div>
-                  <div className="flex flex-col gap-y-1">
+                  <div className="flex flex-row gap-x-4">
                     <ValueColumn value={data.dailyGain} percent={dailyPercent} />
                     <ValueColumn value={data.totalGain} percent={pnlPercent} />
                   </div>
@@ -264,10 +264,8 @@ export function PortfolioOverview() {
                         {item.currency === 'USD' ? '$' : '₺'}{currentPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
                       </span>
                     </div>
-                    <div className="flex flex-col gap-y-0.5">
-                      <ValueColumn value={dailyGainVal} percent={item.dailyChange || 0} />
-                      <ValueColumn value={value - cost} percent={avgPurchasePrice > 0 ? ((currentPrice - avgPurchasePrice)/avgPurchasePrice)*100 : 0} />
-                    </div>
+                    <ValueColumn value={dailyGainVal} percent={item.dailyChange || 0} />
+                    <ValueColumn value={value - cost} percent={avgPurchasePrice > 0 ? ((currentPrice - avgPurchasePrice)/avgPurchasePrice)*100 : 0} />
                   </div>
                   <div className="flex-[1] text-right text-lg md:text-2xl font-mono font-bold tracking-tighter text-white">
                     ₺{value.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
@@ -426,7 +424,7 @@ function AccountSummaryItem({ data, isIncluded, isSelected, weight, onSelect, on
         <span className={cn("text-lg md:text-2xl font-bold tracking-tighter truncate max-w-[120px] md:max-w-[200px]", isSelected ? "text-amber-500" : "text-white")}>{data.accountName}</span>
         <BadgeGroup amount={data.amount} weight={weight} isSelected={isSelected} color="amber" />
       </div>
-      <div className="flex flex-col gap-y-1">
+      <div className="flex flex-row gap-x-4">
         <ValueColumn value={data.dailyGain} percent={dailyPercent} />
         <ValueColumn value={data.totalGain} percent={pnlPercent} />
       </div>
