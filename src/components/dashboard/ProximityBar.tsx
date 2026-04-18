@@ -54,9 +54,9 @@ export function ProximityBar({ current, last4hPrice, target, currency, strategy 
     <div className="mt-8 relative z-10">
       <div className="flex justify-between items-end mb-4 relative">
         <div className="flex flex-col">
-          <span className="text-[10px] font-black text-zinc-600 tracking-[0.2em] mb-1">{leftLabel}</span>
+          <span className="text-[8px] md:text-[10px] font-black text-zinc-600 tracking-[0.2em] mb-1">{leftLabel}</span>
           <span className={cn(
-            "text-xl font-mono font-black",
+            "text-base md:text-xl font-mono font-black",
             isUpward ? "text-emerald-400" : "text-amber-500"
           )}>
             {currency}{leftValue.toLocaleString()}
@@ -64,14 +64,14 @@ export function ProximityBar({ current, last4hPrice, target, currency, strategy 
         </div>
 
         {/* Kalan Yüzde Badge (Ortada) */}
-        <div className="absolute left-1/2 -translate-x-1/2 -top-2">
-          <div className="bg-zinc-800/80 border border-zinc-700 px-5 py-1.5 rounded-2xl flex items-center gap-3 backdrop-blur-md shadow-xl">
-            <span className="text-[10px] font-black text-zinc-400 tracking-tighter uppercase whitespace-nowrap">
+        <div className="absolute left-1/2 -translate-x-1/2 -top-4 md:-top-2 scale-[0.8] md:scale-100">
+          <div className="bg-zinc-800/80 border border-zinc-700 px-3 md:px-5 py-1 md:py-1.5 rounded-2xl flex items-center gap-2 md:gap-3 backdrop-blur-md shadow-xl">
+            <span className="text-[8px] md:text-[10px] font-black text-zinc-400 tracking-tighter uppercase whitespace-nowrap">
               {basePrice >= target && isUpward ? 'HEDEF GEÇİLDİ' : 
                basePrice <= target && !isUpward ? 'HEDEFE GELDİ' : 'KALAN'}
             </span>
             <span className={cn(
-              "text-sm font-mono font-black",
+              "text-xs md:text-sm font-mono font-black",
               basePrice >= target && isUpward ? "text-emerald-400" : "text-amber-500"
             )}>
                %{absDiffPercent}
@@ -80,9 +80,9 @@ export function ProximityBar({ current, last4hPrice, target, currency, strategy 
         </div>
 
         <div className="flex flex-col items-end">
-          <span className="text-[10px] font-black text-zinc-600 tracking-[0.2em] mb-1">{rightLabel}</span>
+          <span className="text-[8px] md:text-[10px] font-black text-zinc-600 tracking-[0.2em] mb-1">{rightLabel}</span>
           <span className={cn(
-             "text-xl font-mono font-black",
+             "text-base md:text-xl font-mono font-black",
              isUpward ? "text-amber-500" : "text-emerald-400"
           )}>
             {currency}{rightValue.toLocaleString()}

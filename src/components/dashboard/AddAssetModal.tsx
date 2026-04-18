@@ -237,10 +237,11 @@ export function AddAssetModal({ isOpen, onClose, initialType, isPortfolio = fals
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl overflow-hidden"
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-zinc-900 border border-white/5 w-[95%] max-w-lg md:w-full p-5 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-2xl relative overflow-y-auto max-h-[90vh] scrollbar-hide"
           >
             {/* Üst Başlık ve Kapatma */}
             <div className="flex justify-between items-center mb-6">

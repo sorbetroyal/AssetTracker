@@ -59,10 +59,10 @@ export function AssetTable() {
         editingAsset={editingAsset}
       />
 
-      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center bg-zinc-900/40 p-4 md:p-6 rounded-[2rem] border border-white/5 backdrop-blur-xl shadow-2xl gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center bg-zinc-900/40 p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-white/5 backdrop-blur-xl shadow-2xl gap-4 md:gap-6">
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-6">
-            <h1 className="text-2xl md:text-3xl font-black text-zinc-100 tracking-tighter italic leading-none">Hedef Takip</h1>
+          <div className="flex flex-col md:flex-row items-center md:items-center gap-3 md:gap-6">
+            <h1 className="text-xl md:text-3xl font-black text-zinc-100 tracking-tighter italic leading-none">Hedef Takip</h1>
             
             <div className="flex flex-col items-center sm:items-start gap-1">
               <div className="flex items-center gap-3">
@@ -202,7 +202,7 @@ function AssetCard({ asset, removeAsset, onEdit, isReached = false }: any) {
   return (
     <div 
       className={cn(
-        "bg-zinc-900/50 border border-zinc-800 p-8 rounded-[2.5rem] hover:border-zinc-500 transition-all group relative overflow-hidden pointer-events-none",
+        "bg-zinc-900/50 border border-zinc-800 p-4 md:p-8 rounded-[2.5rem] hover:border-zinc-500 transition-all group relative overflow-hidden pointer-events-none",
         isReached && "border-emerald-500/40 bg-emerald-500/[0.03]",
         isCritical && "border-red-500/60 animate-pulse duration-[2000ms]"
       )}
@@ -231,14 +231,14 @@ function AssetCard({ asset, removeAsset, onEdit, isReached = false }: any) {
       </div>
 
       <div className="relative z-10"> {/* İçerik katmanı */}
-        <div className="flex flex-col sm:flex-row justify-between items-start mb-8 pr-12 gap-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start mb-6 md:mb-8 md:pr-12 gap-4 md:gap-6">
         <div>
-          <div className="flex gap-2 mb-4">
-            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest bg-zinc-800 px-3 py-1.5 rounded-lg border border-white/5">{asset.type}</span>
-            <span className={cn("text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border", isLossStrat ? "bg-red-500/20 text-red-400 border-red-500/30" : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30")}>{asset.strategy}</span>
+          <div className="flex gap-2 mb-3 md:mb-4">
+            <span className="text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest bg-zinc-800 px-2.5 py-1 md:py-1.5 rounded-lg border border-white/5">{asset.type}</span>
+            <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest px-2.5 py-1 md:py-1.5 rounded-lg border", isLossStrat ? "bg-red-500/20 text-red-400 border-red-500/30" : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30")}>{asset.strategy}</span>
           </div>
-          <div className="flex items-center gap-3">
-            <h3 className="text-3xl font-black text-zinc-100 tracking-tighter uppercase italic">
+          <div className="flex items-center gap-2 md:gap-3">
+            <h3 className="text-xl md:text-3xl font-black text-zinc-100 tracking-tighter uppercase italic">
               {asset.symbol.replace('.IS', '').replace('-USD', '')}
             </h3>
             {isInPortfolio && (
@@ -251,9 +251,9 @@ function AssetCard({ asset, removeAsset, onEdit, isReached = false }: any) {
           <p className="text-xs text-zinc-500 font-bold uppercase tracking-tight mt-1">{asset.name}</p>
         </div>
         
-        <div className="text-right">
-          <div className="text-2xl font-mono font-black text-zinc-100">{asset.currency}{asset.currentPrice?.toLocaleString()}</div>
-          <div className={cn("text-sm font-mono font-black", asset.dailyChange >= 0 ? "text-emerald-400" : "text-red-400")}>
+        <div className="text-left sm:text-right">
+          <div className="text-xl md:text-2xl font-mono font-black text-zinc-100">{asset.currency}{asset.currentPrice?.toLocaleString()}</div>
+          <div className={cn("text-xs md:text-sm font-mono font-black", asset.dailyChange >= 0 ? "text-emerald-400" : "text-red-400")}>
             {asset.dailyChange >= 0 ? "+" : ""}{asset.dailyChange?.toFixed(2)}%
           </div>
         </div>

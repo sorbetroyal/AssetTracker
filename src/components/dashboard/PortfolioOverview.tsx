@@ -86,7 +86,7 @@ export function PortfolioOverview() {
     : totalStats.totalValue;
 
   return (
-    <div className="flex-1 p-4 md:p-8 flex flex-col gap-10 max-w-7xl mx-auto w-full bg-black/20 rounded-[3rem]">
+    <div className="flex-1 p-3 md:p-8 flex flex-col gap-6 md:gap-10 max-w-7xl mx-auto w-full bg-black/20 rounded-2xl md:rounded-[3rem]">
       <AddAssetModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} initialType={modalType as any} isPortfolio={true} />
 
       {/* ÖZET KARTLAR */}
@@ -247,8 +247,8 @@ export function PortfolioOverview() {
                     }
                   }}
                 >
-                  <div className="flex-[3] flex items-center gap-4">
-                    <span className="text-2xl font-bold tracking-tighter text-white truncate w-[160px]">
+                  <div className="flex-[3] flex items-center gap-3 md:gap-4">
+                    <span className="text-lg md:text-2xl font-bold tracking-tighter text-white truncate max-w-[120px] md:max-w-[200px]">
                       {item.symbol === 'GC=F' ? 'Altın' : 
                        item.symbol === 'SI=F' ? 'Gümüş' : 
                        item.symbol.replace('.IS', '').replace('-USD', '')}
@@ -257,7 +257,7 @@ export function PortfolioOverview() {
                   </div>
                   <ValueColumn value={dailyGainVal} percent={item.dailyChange || 0} />
                   <ValueColumn value={value - cost} percent={avgPurchasePrice > 0 ? ((currentPrice - avgPurchasePrice)/avgPurchasePrice)*100 : 0} />
-                  <div className="flex-[1] text-right text-2xl font-mono font-bold tracking-tighter text-white">
+                  <div className="flex-[1] text-right text-lg md:text-2xl font-mono font-bold tracking-tighter text-white">
                     ₺{value.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
                   </div>
                 </RowWrapper>
@@ -308,12 +308,12 @@ function RowWrapper({ children, isSelected, onClick, activeColor, className, sho
       layout 
       onClick={confirmDelete ? undefined : onClick}
       className={cn(
-      "group relative flex items-center gap-4 pl-8 pr-32 py-4 rounded-2xl border transition-all overflow-hidden",
+      "group relative flex flex-col md:flex-row md:items-center gap-2 md:gap-4 p-4 md:pl-8 md:pr-32 md:py-4 rounded-2xl border transition-all overflow-hidden",
       !isIncluded ? "opacity-30 grayscale border-white/5 bg-transparent" : isSelected ? cn("bg-zinc-800/80 scale-[1.005] z-10", colorMap[activeColor]) : "bg-zinc-900/40 border-white/5 hover:bg-zinc-900/80",
       className
     )}>
       {children}
-      <div className="absolute right-4 flex items-center gap-2 z-50">
+      <div className="md:absolute md:right-4 flex items-center justify-end gap-2 mt-2 md:mt-0 z-50">
         {showToggle && (
           <button 
             onClick={(e) => { e.stopPropagation(); onToggle && onToggle(e); }}
@@ -354,9 +354,9 @@ function RowWrapper({ children, isSelected, onClick, activeColor, className, sho
 
 function ValueColumn({ value, percent }: any) {
   return (
-    <div className={cn("flex-[1] text-xl font-bold font-mono tracking-tighter", value >= 0 ? "text-emerald-500" : "text-red-500")}>
+    <div className={cn("flex-[1] text-lg md:text-xl font-bold font-mono tracking-tighter", value >= 0 ? "text-emerald-500" : "text-red-500")}>
       {value >= 0 ? '+' : ''}₺{value.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
-      <span className="text-sm font-black ml-2 opacity-70">({value >= 0 ? '+' : ''}{percent.toFixed(2)}%)</span>
+      <span className="text-[10px] md:text-sm font-black ml-2 opacity-70">({value >= 0 ? '+' : ''}{percent.toFixed(2)}%)</span>
     </div>
   );
 }
@@ -378,13 +378,13 @@ function BadgeGroup({ amount, weight, isSelected, color, isAsset }: any) {
 
 function SummaryCard({ label, value, percent, icon, isNegative }: any) {
   return (
-    <div className="bg-zinc-900/60 border border-white/5 p-6 rounded-[1.8rem] hover:bg-zinc-900 transition-all group overflow-hidden relative">
-      <div className="flex items-center gap-2 mb-4">
+    <div className="bg-zinc-900/60 border border-white/5 p-4 md:p-6 rounded-2xl md:rounded-[1.8rem] hover:bg-zinc-900 transition-all group overflow-hidden relative">
+      <div className="flex items-center gap-2 mb-2 md:mb-4">
         {icon}
-        <span className="text-xs font-black text-zinc-500 tracking-widest leading-none capitalize">{label.toLowerCase()}</span>
-        {percent && <span className={cn("ml-auto text-sm font-black", isNegative ? "text-red-500" : "text-emerald-500")}>{isNegative ? '' : '+'}{percent}</span>}
+        <span className="text-[10px] md:text-xs font-black text-zinc-500 tracking-widest leading-none capitalize">{label.toLowerCase()}</span>
+        {percent && <span className={cn("ml-auto text-xs md:text-sm font-black", isNegative ? "text-red-500" : "text-emerald-500")}>{isNegative ? '' : '+'}{percent}</span>}
       </div>
-      <div className={cn("text-3xl md:text-4xl font-black tracking-tighter font-mono leading-none", isNegative ? "text-red-500" : "text-white")}>{value}</div>
+      <div className={cn("text-2xl md:text-4xl font-black tracking-tighter font-mono leading-none", isNegative ? "text-red-500" : "text-white")}>{value}</div>
     </div>
   );
 }
@@ -405,8 +405,8 @@ function AccountSummaryItem({ data, isIncluded, isSelected, weight, onSelect, on
 
   return (
     <RowWrapper isSelected={isSelected} onClick={onSelect} activeColor="amber" isIncluded={isIncluded} showToggle onToggle={onToggle} showDelete onDelete={onDelete}>
-      <div className="flex-[3] flex items-center gap-4">
-        <span className={cn("text-2xl font-bold tracking-tighter truncate w-[160px]", isSelected ? "text-amber-500" : "text-white")}>{data.accountName}</span>
+      <div className="flex-[3] flex items-center gap-3 md:gap-4">
+        <span className={cn("text-lg md:text-2xl font-bold tracking-tighter truncate max-w-[120px] md:max-w-[200px]", isSelected ? "text-amber-500" : "text-white")}>{data.accountName}</span>
         <BadgeGroup amount={data.amount} weight={weight} isSelected={isSelected} color="amber" />
       </div>
       <ValueColumn value={data.dailyGain} percent={dailyPercent} />
