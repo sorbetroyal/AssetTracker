@@ -260,7 +260,6 @@ export function PortfolioOverview() {
                   </div>
                   <div className="flex flex-row gap-x-4">
                     <div className="flex-[0.8] hidden md:flex flex-col justify-center">
-                      <span className="text-[10px] text-zinc-500 font-black tracking-widest leading-none mb-1 uppercase">FİYAT</span>
                       <span className="text-sm md:text-lg font-mono font-bold text-zinc-300">
                         {item.currency === 'USD' ? '$' : '₺'}{currentPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
                       </span>
