@@ -178,7 +178,7 @@ export function PortfolioOverview() {
                     <span className={cn("text-2xl font-bold tracking-tighter truncate w-[160px]", isSelected ? "text-emerald-400" : "text-white")}>{data.name}</span>
                     <BadgeGroup amount={data.amount} weight={weight} isSelected={isSelected} color="emerald" />
                   </div>
-                  <div className="flex flex-row md:flex-col gap-x-4 gap-y-1">
+                  <div className="flex flex-row gap-x-4">
                     <ValueColumn value={data.dailyGain} percent={dailyPercent} />
                     <ValueColumn value={data.totalGain} percent={pnlPercent} />
                   </div>
@@ -258,7 +258,7 @@ export function PortfolioOverview() {
                     </span>
                     <BadgeGroup amount={item.totalAmount} weight={weight} isAsset />
                   </div>
-                  <div className="flex flex-row md:flex-col gap-x-4 gap-y-1">
+                  <div className="flex flex-row gap-x-4">
                     <ValueColumn value={dailyGainVal} percent={item.dailyChange || 0} />
                     <ValueColumn value={value - cost} percent={avgPurchasePrice > 0 ? ((currentPrice - avgPurchasePrice)/avgPurchasePrice)*100 : 0} />
                   </div>
@@ -419,7 +419,7 @@ function AccountSummaryItem({ data, isIncluded, isSelected, weight, onSelect, on
         <span className={cn("text-lg md:text-2xl font-bold tracking-tighter truncate max-w-[120px] md:max-w-[200px]", isSelected ? "text-amber-500" : "text-white")}>{data.accountName}</span>
         <BadgeGroup amount={data.amount} weight={weight} isSelected={isSelected} color="amber" />
       </div>
-      <div className="flex flex-row md:flex-col gap-x-4 gap-y-1">
+      <div className="flex flex-row gap-x-4">
         <ValueColumn value={data.dailyGain} percent={dailyPercent} />
         <ValueColumn value={data.totalGain} percent={pnlPercent} />
       </div>
