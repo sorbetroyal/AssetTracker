@@ -498,7 +498,7 @@ export function AddAssetModal({ isOpen, onClose, initialType, isPortfolio = fals
 
               <button
                 type="submit"
-                disabled={(!formData.type === 'BANK' && isPortfolio && accounts.length === 0) || isPriceLoading}
+                disabled={(formData.type !== 'BANK' && isPortfolio && accounts.length === 0) || isPriceLoading}
                 className="mt-4 flex items-center justify-center gap-2 bg-white text-black p-4 rounded-xl font-black text-xs transition-all hover:scale-[1.01] active:scale-[0.99] uppercase tracking-[0.2em] disabled:opacity-50 disabled:hover:scale-100"
               >
                 {!editingAsset && <Plus size={16} />}
