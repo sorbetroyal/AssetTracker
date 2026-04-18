@@ -1,8 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import YahooFinance from 'yahoo-finance2';
-import { fetchTefasPrice } from '@/lib/tefas';
 
 const yf = new YahooFinance();
+const TEFAS_API_URL = process.env.TEFAS_API_URL ?? '';
+
+async function fetchTefasHistoryViaPythonService(
+  symbol: string,
+  date: string
+): Promise<number | null> {
+  if (!TEFAS_API_URL) return null;
+  try {
+    const url = `${TEFAS_API_URL}/price?symbol=${symbol}&date=${date}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.price ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -22,11 +38,11 @@ export async function GET(req: NextRequest) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // 1. TEFAS / BEFAS → fundturkey.com.tr (Python yok, saf TypeScript)
+    // 1. TEFAS / BEFAS → Render.com Python servisi
     if (type === 'TEFAS' || type === 'BEFAS') {
-      const result = await fetchTefasPrice(symbol, dateStr);
-      if (result) {
-        return NextResponse.json({ price: result.price });
+      const price = await fetchTefasHistoryViaPythonService(symbol, dateStr);
+      if (price !== null) {
+        return NextResponse.json({ price });
       }
       return NextResponse.json({ error: 'Fon fiyatı bulunamadı' }, { status: 404 });
     }

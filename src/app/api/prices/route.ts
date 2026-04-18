@@ -1,8 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import YahooFinance from 'yahoo-finance2';
-import { fetchTefasPrices } from '@/lib/tefas';
 
 const yf = new YahooFinance();
+
+// Render.com'daki Python borsapy servisi
+// Lokalde fundturkey'e doğrudan, üretimde Render servisine
+const TEFAS_API_URL = process.env.TEFAS_API_URL ?? '';
+
+async function fetchTefasViaPythonService(symbols: string[]): Promise<any[]> {
+  if (!TEFAS_API_URL) {
+    console.warn('[TEFAS] TEFAS_API_URL tanımlı değil, atlanıyor.');
+    return [];
+  }
+  try {
+    const url = `${TEFAS_API_URL}/prices?symbols=${symbols.join(',')}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+    if (!res.ok) throw new Error(`Servis HTTP ${res.status}`);
+    return await res.json();
+  } catch (err: any) {
+    console.error('[TEFAS] Python servis hatası:', err.message);
+    return [];
+  }
+}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -60,12 +79,12 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 2. TEFAS / BEFAS → fundturkey.com.tr (saf TypeScript, Python yok)
+    // 2. TEFAS / BEFAS → Render.com Python servisi (borsapy)
     if (fundMeta.length > 0) {
       const symbols = fundMeta.map((f) => f.symbol);
-      const tefasResults = await fetchTefasPrices(symbols);
+      const tefasResults = await fetchTefasViaPythonService(symbols);
 
-      tefasResults.forEach((r) => {
+      tefasResults.forEach((r: any) => {
         const meta = fundMeta.find((f) => f.symbol === r.symbol);
         finalResults.push({ ...r, type: meta?.type ?? 'TEFAS' });
       });
