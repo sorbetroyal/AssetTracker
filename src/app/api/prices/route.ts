@@ -1,78 +1,78 @@
 import { NextRequest, NextResponse } from 'next/server';
 import YahooFinance from 'yahoo-finance2';
+import { exec } from 'child_process';
+import path from 'path';
+import { promisify } from 'util';
 
+const execAsync = promisify(exec);
 const yf = new YahooFinance();
+
+// Python yolunu Windows için uygun hale getir
+const PYTHON_PATH = 'python'; // Eğer sistemde 'python3' ise değiştirilebilir
+const SCRIPT_PATH = path.join(process.cwd(), 'scripts', 'fetch_funds.py');
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const symbolsParam = searchParams.get('symbols');
+  const pairsParam = searchParams.get('pairs');
+  if (!pairsParam) return NextResponse.json({ error: 'No pairs provided' }, { status: 400 });
 
-  if (!symbolsParam) {
-    return NextResponse.json({ error: 'No symbols provided' }, { status: 400 });
-  }
+  const pairs = pairsParam.split(',');
+  const fundPairs = pairs.filter(p => p.startsWith('TEFAS:') || p.startsWith('BEFAS:'));
+  const otherPairs = pairs.filter(p => !p.startsWith('TEFAS:') && !p.startsWith('BEFAS:'));
 
-  const symbols = symbolsParam.split(',');
+  const fundSymbols = fundPairs.map(p => p.split(':')[1]);
+  const otherSymbols = otherPairs.map(p => p.split(':')[1]);
+  const otherTypes = otherPairs.reduce((acc: any, p) => {
+    const [type, sym] = p.split(':');
+    acc[sym] = type;
+    return acc;
+  }, {});
 
   try {
-    const quotes = await yf.quote(symbols);
-    const quotesArray = Array.isArray(quotes) ? quotes : [quotes];
+    let finalResults: any[] = [];
 
-    const results = await Promise.all(quotesArray.map(async (quote) => {
-      let last4hPrice = quote.regularMarketPrice;
-      const isBIST = quote.symbol.endsWith('.IS');
-      const isMarketOpen = quote.marketState === 'REGULAR';
-
-      try {
-        const period1 = new Date();
-        period1.setDate(period1.getDate() - 3);
-        const chart = await yf.chart(quote.symbol, { interval: '1h', period1 }).catch(() => null);
+    // 1. Yahoo Finance (Hisse, Kripto, US, Index)
+    if (otherSymbols.length > 0) {
+      const quotes = await yf.quote(otherSymbols);
+      const quotesArray = Array.isArray(quotes) ? quotes : [quotes];
+      
+      const yahooResults = quotesArray.map(quote => {
+        const price = quote.regularMarketPrice ?? quote.postMarketPrice ?? quote.regularMarketPreviousClose ?? 0;
+        const prevClose = quote.regularMarketPreviousClose ?? price;
         
-        if (chart && chart.quotes) {
-          const valid = chart.quotes.filter((q: any) => q.close !== null && q.close !== undefined);
-          if (valid.length > 0) {
-            if (isBIST) {
-              const tvBist = valid.filter((q: any) => {
-                const hour = new Date(q.date).getUTCHours();
-                return hour === 11 || hour === 15;
-              });
-              if (!isMarketOpen) {
-                last4hPrice = quote.regularMarketPrice;
-              } else {
-                last4hPrice = tvBist.length > 0 ? tvBist[tvBist.length - 1].close : valid[valid.length - 1].close;
-              }
-            } else {
-              const tvOthers = valid.filter((q: any) => (new Date(q.date).getUTCHours() % 4 === 0));
-              last4hPrice = tvOthers.length > 0 ? tvOthers[tvOthers.length - 1].close : valid[valid.length - 1].close;
-            }
-          }
+        let changePercent = quote.regularMarketChangePercent;
+        if ((!changePercent || changePercent === 0) && price !== prevClose && prevClose > 0) {
+          changePercent = ((price - prevClose) / prevClose) * 100;
         }
-      } catch (e) {
-        console.warn('Chart fetch failed for', quote.symbol);
-      }
 
-      return {
-        symbol: quote.symbol,
-        price: quote.regularMarketPrice,
-        last4hPrice: last4hPrice,
-        name: quote.shortName || quote.longName,
-        changePercent: quote.regularMarketChangePercent
-      };
-    }));
-
-    return NextResponse.json(results);
-  } catch (error: any) {
-    console.error('API Error:', error.message);
-    
-    if (error.code === 429 || error.message?.includes('Too Many Requests')) {
-      return NextResponse.json(
-        { error: 'Yahoo Finance limitine yakalandı. Lütfen biraz bekleyin.' }, 
-        { status: 429 }
-      );
+        return {
+          symbol: quote.symbol,
+          type: otherTypes[quote.symbol],
+          price: price,
+          name: quote.shortName || quote.longName,
+          changePercent: changePercent ?? 0,
+          source: 'yahoo'
+        };
+      });
+      finalResults = [...finalResults, ...yahooResults];
     }
 
-    return NextResponse.json(
-      { error: 'Veri çekilirken bir hata oluştu.' }, 
-      { status: 500 }
-    );
+    // 2. borsapy (TEFAS/BEFAS Fonları)
+    if (fundSymbols.length > 0) {
+      try {
+        const { stdout } = await execAsync(`${PYTHON_PATH} "${SCRIPT_PATH}" "${fundSymbols.join(',')}"`);
+        const borsaResults = JSON.parse(stdout);
+        // Tip bilgisini ekle
+        const typedBorsaResults = borsaResults.map((r: any) => ({ ...r, type: 'TEFAS' }));
+        finalResults = [...finalResults, ...typedBorsaResults];
+      } catch (error) {
+        console.error('Fund fetch error:', error);
+      }
+    }
+
+    return NextResponse.json(finalResults);
+  } catch (error: any) {
+    console.error('API Error:', error.message);
+    return NextResponse.json({ error: 'Veri çekilirken bir hata oluştu.' }, { status: 500 });
   }
 }

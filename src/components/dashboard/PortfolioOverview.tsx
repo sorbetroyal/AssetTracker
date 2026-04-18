@@ -1,9 +1,9 @@
 'use client';
 
 import { useAssetStore, PortfolioItem } from '@/store/useAssetStore';
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Wallet, TrendingUp, Activity, Landmark, Plus, Trash2, Calendar } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Wallet, TrendingUp, Activity, Landmark, Plus, Trash2, Eye, EyeOff } from 'lucide-react';
 import { AddAssetModal } from './AddAssetModal';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -12,18 +12,35 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function PortfolioOverview() {
-  const { portfolioHoldings, removePortfolioItem } = useAssetStore();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<PortfolioItem['assetType']>('BIST');
+const assetTypeOrder = ['BIST', 'TEFAS', 'BEFAS', 'US', 'CRYPTO', 'COMMODITY'];
 
-  // Hesaplamalar
+const assetTypeLabels: Record<string, string> = {
+  'BIST': 'BIST',
+  'TEFAS': 'Yatırım Fonları',
+  'BEFAS': 'BES Fonları',
+  'US': 'ABD Borsası',
+  'CRYPTO': 'Kripto',
+  'COMMODITY': 'Emtia'
+};
+
+export function PortfolioOverview() {
+  const { portfolioHoldings, removePortfolioItem, removePortfolioItemsBySymbol, accounts, removeAccount, toggleAccountInclusion, rates } = useAssetStore();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<PortfolioItem['assetType'] | 'BANK'>('BIST');
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [selectedAssetType, setSelectedAssetType] = useState<string | null>(null);
+
+  const usdRate = rates?.USD || 34.5;
+  const activeAccountIds = accounts.filter(a => a.isIncluded).map(a => a.id);
+  const filteredAccountIds = new Set(selectedAccountId ? [selectedAccountId] : activeAccountIds);
+
   const totalStats = portfolioHoldings.reduce((acc, item) => {
+    if (!activeAccountIds.includes(item.accountId)) return acc;
     const currentPrice = item.currentPrice || item.purchasePrice || 0;
-    const value = item.amount * currentPrice;
-    const cost = item.amount * item.purchasePrice;
+    const isUSD = item.currency === '$';
+    const value = (item.amount * currentPrice) * (isUSD ? usdRate : 1);
+    const cost = (item.amount * item.purchasePrice) * (isUSD ? usdRate : 1);
     const dailyChangeVal = item.dailyChange ? (value * item.dailyChange) / 100 : 0;
-    
     return {
       totalValue: acc.totalValue + value,
       totalCost: acc.totalCost + cost,
@@ -35,178 +52,326 @@ export function PortfolioOverview() {
   const totalPnlPercent = totalStats.totalCost > 0 ? (totalPnl / totalStats.totalCost) * 100 : 0;
   const dailyPnlPercent = totalStats.totalValue > 0 ? (totalStats.dailyGain / totalStats.totalValue) * 100 : 0;
 
-  const accounts = portfolioHoldings.filter(h => h.assetType === 'BANK');
-  const investments = portfolioHoldings.filter(h => h.assetType !== 'BANK');
+  const rawStats = portfolioHoldings
+    .filter(h => filteredAccountIds.has(h.accountId))
+    .reduce((acc: any, h) => {
+      const typeLabel = assetTypeLabels[h.assetType] || h.assetType;
+      const rawType = h.assetType;
+      const isUSD = h.currency === '$';
+      if (!acc[rawType]) {
+        acc[rawType] = { name: typeLabel, rawType, totalValue: 0, totalCost: 0, totalGain: 0, dailyGain: 0, symbols: new Set() };
+      }
+      const currentPrice = h.currentPrice || h.purchasePrice || 0;
+      const value = (h.amount * currentPrice) * (isUSD ? usdRate : 1);
+      const cost = (h.amount * h.purchasePrice) * (isUSD ? usdRate : 1);
+      const gain = value - cost;
+      const dChange = h.dailyChange ? (value * h.dailyChange) / 100 : 0;
+      
+      acc[rawType].symbols.add(h.symbol);
+      acc[rawType].amount = acc[rawType].symbols.size;
+      acc[rawType].totalValue += value;
+      acc[rawType].totalCost += cost;
+      acc[rawType].totalGain += gain;
+      acc[rawType].dailyGain += dChange;
+      return acc;
+    }, {});
+
+  const assetTypeStats = assetTypeOrder
+    .filter(type => rawStats[type])
+    .map(type => rawStats[type]);
+
+  // Dinamik oran hesaplama için payda (Seçili hesap varsa onun toplamı, yoksa genel toplam)
+  const displayTotal = selectedAccountId 
+    ? Object.values(rawStats).reduce((sum: number, s: any) => sum + s.totalValue, 0)
+    : totalStats.totalValue;
 
   return (
     <div className="flex-1 p-4 md:p-8 flex flex-col gap-10 max-w-7xl mx-auto w-full bg-black/20 rounded-[3rem]">
-      <AddAssetModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} initialType={modalType} isPortfolio={true} />
+      <AddAssetModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} initialType={modalType as any} isPortfolio={true} />
 
-      {/* 1. ÖZET KARTLARI */}
+      {/* ÖZET KARTLAR */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <SummaryCard label="PORTFÖY DEĞERİ" value={`₺${totalStats.totalValue.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={<Wallet size={14} className="text-emerald-500" />} />
-        <SummaryCard label="TOPLAM K/Z" value={`₺${totalPnl.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} percent={`${totalPnlPercent.toFixed(2)}%`} isNegative={totalPnl < 0} icon={<TrendingUp size={14} className={totalPnl >= 0 ? "text-emerald-500" : "text-red-500"} />} />
-        <SummaryCard label="GÜNLÜK DEĞİŞİM" value={`₺${totalStats.dailyGain.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} percent={`${dailyPnlPercent.toFixed(2)}%`} isNegative={totalStats.dailyGain < 0} icon={<Activity size={14} className={totalStats.dailyGain >= 0 ? "text-emerald-500" : "text-red-500"} />} />
-        <SummaryCard label="TOPLAM MALİYET" value={`₺${totalStats.totalCost.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={<Landmark size={14} className="text-amber-500" />} />
+        <SummaryCard label="Portföy Değeri" value={`₺${totalStats.totalValue.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} icon={<Wallet size={14} className="text-emerald-500" />} />
+        <SummaryCard label="Günlük Değişim" value={`₺${totalStats.dailyGain.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} percent={`${dailyPnlPercent.toFixed(2)}%`} isNegative={totalStats.dailyGain < 0} icon={<Activity size={14} className={totalStats.dailyGain >= 0 ? "text-emerald-500" : "text-red-500"} />} />
+        <SummaryCard label="Toplam K/Z" value={`₺${totalPnl.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} percent={`${totalPnlPercent.toFixed(2)}%`} isNegative={totalPnl < 0} icon={<TrendingUp size={14} className={totalPnl >= 0 ? "text-emerald-500" : "text-red-500"} />} />
+        <SummaryCard label="Toplam Maliyet" value={`₺${totalStats.totalCost.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} icon={<Landmark size={14} className="text-amber-500" />} />
       </div>
 
-      <div className="flex flex-col gap-16">
+      <div className="flex flex-col gap-12">
         {/* HESAPLAR */}
-        <div className="flex flex-col gap-6">
-          <div className="flex justify-between items-end px-2">
-            <div className="flex items-center gap-3">
-              <div className="w-1.5 h-8 bg-amber-500 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.5)]" />
-              <h2 className="text-3xl font-black text-white italic tracking-tighter">Hesaplar</h2>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => { setModalType('BIST'); setIsModalOpen(true); }} className="text-[10px] font-black text-blue-500 bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-xl hover:bg-blue-500 hover:text-white transition-all flex items-center gap-2 tracking-widest uppercase">
-                <Plus size={14} /> VARLIK EKLE
-              </button>
-              <button onClick={() => { setModalType('BANK'); setIsModalOpen(true); }} className="text-[10px] font-black text-amber-500 bg-amber-500/10 border border-amber-500/20 px-4 py-2 rounded-xl hover:bg-amber-500 hover:text-black transition-all flex items-center gap-2 tracking-widest uppercase">
-                <Plus size={14} /> HESAP EKLE
-              </button>
-            </div>
+        <SectionWrapper 
+          title="Hesaplar" 
+          colorClass="bg-amber-500 shadow-amber-500/50" 
+          textColor="text-amber-500" 
+          onClick={() => setSelectedAccountId(null)}
+        >
+          <div className="flex gap-3">
+            <PlusButton label="Varlık Ekle" color="blue" onClick={() => { setSelectedAccountId(null); setSelectedAssetType(null); setModalType('BIST'); setIsModalOpen(true); }} />
+            <PlusButton label="Hesap Ekle" color="amber" onClick={() => { setModalType('BANK'); setIsModalOpen(true); }} />
           </div>
-          <div className="grid grid-cols-1 gap-4">
-            {Object.entries(
-              portfolioHoldings.reduce((acc: any, h) => {
-                // Sadece BANK tipindeki hesap isimlerini baz alalım
-                const accountNames = Array.from(new Set(portfolioHoldings.filter(x => x.assetType === 'BANK').map(x => x.accountName)));
-                
-                // Eğer hesap isimleri henüz yoksa veya yatırımın hesap adını bulmak istiyorsak
-                const targetAccount = h.accountName;
-                if (!acc[targetAccount]) {
-                  acc[targetAccount] = {
-                    id: targetAccount,
-                    accountName: targetAccount,
-                    symbol: 'ACC',
-                    amount: 0,
-                    purchasePrice: 0,
-                    currentPrice: 0,
-                    dailyChange: 0,
-                    totalValue: 0,
-                    totalCost: 0,
-                    totalGain: 0,
-                    dailyGain: 0
-                  };
-                }
-
+        </SectionWrapper>
+        
+        <div className="flex flex-col gap-1">
+          {accounts.filter(acc => {
+              // 1. Hesap bazlı seçim varsa sadece o hesabı göster
+              if (selectedAccountId && acc.id !== selectedAccountId) return false;
+              
+              // 2. Varlık tipi seçiliyse, sadece o tipi içeren hesapları göster
+              if (selectedAssetType) {
+                return portfolioHoldings.some(h => h.accountId === acc.id && h.assetType === selectedAssetType);
+              }
+              
+              return true;
+          }).map(account => {
+              const accountHoldings = portfolioHoldings.filter(h => h.accountId === account.id);
+              const isSelected = selectedAccountId === account.id;
+              const data = accountHoldings.reduce((acc, h) => {
                 const currentPrice = h.currentPrice || h.purchasePrice || 0;
-                const value = h.amount * currentPrice;
-                const cost = h.amount * h.purchasePrice;
-                const gain = (currentPrice - h.purchasePrice) * h.amount;
+                const isUSD = h.currency === '$';
+                const value = (h.amount * currentPrice) * (isUSD ? usdRate : 1);
+                const cost = (h.amount * h.purchasePrice) * (isUSD ? usdRate : 1);
+                const gain = value - cost;
                 const dChange = h.dailyChange ? (value * h.dailyChange) / 100 : 0;
-
-                acc[targetAccount].amount += h.assetType !== 'BANK' ? 1 : 0; // Varlık adedi sayacı
-                acc[targetAccount].totalValue += value;
-                acc[targetAccount].totalCost += cost;
-                acc[targetAccount].totalGain += gain;
-                acc[targetAccount].dailyGain += dChange;
                 
+                acc.symbols.add(h.symbol);
+                acc.amount = acc.symbols.size;
+                acc.totalValue += value; acc.totalCost += cost; acc.totalGain += gain; acc.dailyGain += dChange;
                 return acc;
-              }, {})
-            )
-            // Sadece gerçekten tanımlanmış (BANK tipiyle oluşturulmuş) hesapları göster
-            .filter(([name]) => portfolioHoldings.some(h => h.assetType === 'BANK' && h.accountName === name))
-            .map(([name, data]: any) => (
-              <AccountSummaryItem key={name} data={data} onDelete={() => {
-                const bankItem = portfolioHoldings.find(h => h.assetType === 'BANK' && h.accountName === name);
-                if (bankItem) removePortfolioItem(bankItem.id);
-              }} />
-            ))}
-            {portfolioHoldings.filter(h => h.assetType === 'BANK').length === 0 && <EmptyState text="Hesap Bulunmuyor" />}
-          </div>
+              }, { accountName: account.name, amount: 0, totalValue: 0, totalCost: 0, totalGain: 0, dailyGain: 0, symbols: new Set<string>() });
+              return (
+                <AccountSummaryItem 
+                  key={account.id} 
+                  data={data} 
+                  isIncluded={account.isIncluded} 
+                  isSelected={isSelected} 
+                  weight={(data.totalValue / (totalStats.totalValue || 1)) * 100}
+                  onSelect={() => setSelectedAccountId(isSelected ? null : account.id)} 
+                  onToggle={(e: any) => { e.stopPropagation(); toggleAccountInclusion(account.id, !account.isIncluded)} } 
+                  onDelete={(e: any) => { 
+                    e.stopPropagation(); 
+                    removeAccount(account.id);
+                  }} 
+                />
+              );
+          })}
         </div>
 
         {/* VARLIK TİPLERİ */}
-        <div className="flex flex-col gap-6">
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-1.5 h-8 bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
-            <h2 className="text-3xl font-black text-white italic tracking-tighter">Varlık Tipleri</h2>
-          </div>
-          <div className="grid grid-cols-1 gap-4">
-            {Object.entries(
-              portfolioHoldings
-                .filter(h => h.assetType !== 'BANK')
-                .reduce((acc: any, h) => {
-                  const type = h.assetType === 'BIST' ? 'BIST' : h.assetType === 'CRYPTO' ? 'KRİPTO' : h.assetType === 'US' ? 'US MARKET' : 'EMTİA';
-                  
-                  if (!acc[type]) {
-                    acc[type] = { name: type, amount: 0, totalValue: 0, totalCost: 0, totalGain: 0, dailyGain: 0 };
-                  }
-
-                  const currentPrice = h.currentPrice || h.purchasePrice || 0;
-                  const value = h.amount * currentPrice;
-                  const cost = h.amount * h.purchasePrice;
-                  const gain = (currentPrice - h.purchasePrice) * h.amount;
-                  const dChange = h.dailyChange ? (value * h.dailyChange) / 100 : 0;
-
-                  acc[type].amount += 1;
-                  acc[type].totalValue += value;
-                  acc[type].totalCost += cost;
-                  acc[type].totalGain += gain;
-                  acc[type].dailyGain += dChange;
-                  
-                  return acc;
-                }, {})
-            ).map(([type, data]: any) => {
+        <SectionWrapper 
+          title="Varlık Tipleri" 
+          colorClass="bg-emerald-500 shadow-emerald-500/50" 
+          textColor="text-emerald-400" 
+          onClick={() => setSelectedAssetType(null)}
+        />
+        
+        <div className="flex flex-col gap-1">
+          {assetTypeStats.filter((data: any) => !selectedAssetType || data.rawType === selectedAssetType).map((data: any) => {
+              const weight = (data.totalValue / (displayTotal || 1)) * 100;
               const pnlPercent = data.totalCost > 0 ? (data.totalGain / data.totalCost) * 100 : 0;
               const yesterdayValue = data.totalValue - data.dailyGain;
               const dailyPercent = yesterdayValue > 0 ? (data.dailyGain / yesterdayValue) * 100 : 0;
+              const isSelected = selectedAssetType === data.rawType;
+              return (
+                <RowWrapper key={data.rawType} isSelected={isSelected} onClick={() => setSelectedAssetType(isSelected ? null : data.rawType)} activeColor="emerald">
+                  <div className="flex-[3] flex items-center gap-4">
+                    <span className={cn("text-2xl font-bold tracking-tighter truncate w-[160px]", isSelected ? "text-emerald-400" : "text-white")}>{data.name}</span>
+                    <BadgeGroup amount={data.amount} weight={weight} isSelected={isSelected} color="emerald" />
+                  </div>
+                  <ValueColumn value={data.dailyGain} percent={dailyPercent} />
+                  <ValueColumn value={data.totalGain} percent={pnlPercent} />
+                  <div className="flex-[1] text-right text-2xl font-mono font-bold tracking-tighter text-white">
+                    ₺{data.totalValue.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
+                  </div>
+                </RowWrapper>
+              );
+          })}
+        </div>
+
+        {/* VARLIKLAR LISTESI */}
+        <SectionWrapper 
+          title="Varlıklar" 
+          colorClass="bg-blue-500 shadow-blue-500/50" 
+          textColor="text-blue-500" 
+          onClick={() => {
+            setSelectedAccountId(null);
+            setSelectedAssetType(null);
+          }}
+        />
+        <div className="flex flex-col gap-1">
+          {Object.values(
+            portfolioHoldings
+              .filter(h => filteredAccountIds.has(h.accountId) && (!selectedAssetType || h.assetType === selectedAssetType))
+              .reduce((acc: any, h) => {
+                if (!acc[h.symbol]) {
+                  acc[h.symbol] = { ...h, totalCostBasis: 0, totalAmount: 0 };
+                }
+                acc[h.symbol].totalAmount += h.amount;
+                acc[h.symbol].totalCostBasis += (h.amount * h.purchasePrice);
+                return acc;
+              }, {})
+          ).map((item: any) => {
+              const currentPrice = item.currentPrice || (item.totalCostBasis / item.totalAmount) || 0;
+              const isUSD = item.currency === '$';
+              const avgPurchasePrice = item.totalCostBasis / item.totalAmount;
+              
+              const value = (item.totalAmount * currentPrice) * (isUSD ? usdRate : 1);
+              const cost = (item.amount * avgPurchasePrice || item.totalCostBasis) * (isUSD ? usdRate : 1);
+              
+              const dailyGainVal = item.dailyChange ? (value * item.dailyChange) / 100 : 0;
+              
+              // VARLIKLAR İÇİN DİNAMİK ORAN (Varlık tipi seçiliyse o tipe göre, değilse genel/hesap bazlı)
+              const assetWeightTotal = selectedAssetType && rawStats[selectedAssetType]
+                ? rawStats[selectedAssetType].totalValue
+                : displayTotal;
+              
+              const weight = (value / (assetWeightTotal || 1)) * 100;
 
               return (
-                <div key={type} className="bg-zinc-900/40 border border-white/5 p-5 rounded-[2rem] flex flex-col sm:flex-row sm:items-center justify-between hover:bg-zinc-900/80 transition-all group relative overflow-hidden gap-6 px-10">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-5">
-                  <div className="text-xl md:text-3xl font-black text-white tracking-tighter flex items-center gap-3">
-                    {type}
-                    <span className="text-[9px] md:text-[10px] font-black text-blue-500/60 uppercase bg-blue-500/5 px-2 py-0.5 md:px-2.5 md:py-1 rounded-lg border border-blue-500/10 tracking-widest">
-                      {data.amount} VRLK
+                <RowWrapper 
+                  key={item.symbol} 
+                  onClick={() => {}} 
+                  className="cursor-default hover:bg-zinc-900/60"
+                  showToggle={!!selectedAccountId}
+                  isIncluded={true} // Varlık bazlı eye on/off şimdilik devre dışı, hesap üzerinden yönetiliyor
+                  onToggle={(e: any) => { 
+                    // ... varlık bazlı toggle gerekirse buraya ...
+                  }}
+                  showDelete={!!selectedAccountId}
+                  onDelete={() => {
+                    const targetIds = portfolioHoldings
+                      .filter(h => h.accountId === selectedAccountId && h.symbol === item.symbol)
+                      .map(h => h.id);
+
+                    if (targetIds.length > 0) {
+                      targetIds.forEach(id => removePortfolioItem(id));
+                    }
+                  }}
+                >
+                  <div className="flex-[3] flex items-center gap-4">
+                    <span className="text-2xl font-bold tracking-tighter text-white truncate w-[160px]">
+                      {item.symbol === 'GC=F' ? 'Altın' : 
+                       item.symbol === 'SI=F' ? 'Gümüş' : 
+                       item.symbol.replace('.IS', '').replace('-USD', '')}
                     </span>
+                    <BadgeGroup amount={item.totalAmount} weight={weight} isAsset />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 sm:flex sm:flex-1 justify-between sm:justify-end items-center gap-4 sm:gap-8 md:gap-14">
-                  <div className="text-left sm:text-right">
-                    <div className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1 leading-none">Günlük (Net)</div>
-                    <div className={cn("text-base md:text-xl font-black tracking-tighter leading-none flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4 font-mono", data.dailyGain >= 0 ? "text-emerald-500" : "text-red-500")}>
-                      <span>{data.dailyGain >= 0 ? '+' : ''}₺{data.dailyGain.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                      <span className="text-sm md:text-lg opacity-80 font-black">{`(${data.dailyGain >= 0 ? '+' : ''}${dailyPercent.toFixed(2)}%)`}</span>
-                    </div>
+                  <ValueColumn value={dailyGainVal} percent={item.dailyChange || 0} />
+                  <ValueColumn value={value - cost} percent={avgPurchasePrice > 0 ? ((currentPrice - avgPurchasePrice)/avgPurchasePrice)*100 : 0} />
+                  <div className="flex-[1] text-right text-2xl font-mono font-bold tracking-tighter text-white">
+                    ₺{value.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
                   </div>
-                  <div className="text-left sm:text-right">
-                    <div className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1 leading-none">Toplam K/Z</div>
-                    <div className={cn("text-base md:text-xl font-black tracking-tighter leading-none flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4 font-mono", data.totalGain >= 0 ? "text-emerald-500" : "text-red-500")}>
-                      <span>{data.totalGain >= 0 ? '+' : ''}₺{data.totalGain.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                      <span className="text-sm md:text-lg opacity-80 font-black">{`(${data.totalGain >= 0 ? '+' : ''}${pnlPercent.toFixed(2)}%)`}</span>
-                    </div>
-                  </div>
-                  <div className="text-left sm:text-right col-span-2 sm:col-auto sm:min-w-[120px] pt-2 sm:pt-0 border-t border-white/5 sm:border-0 mt-2 sm:mt-0">
-                    <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 leading-none opacity-40">Toplam Değer</div>
-                    <div className="text-xl md:text-3xl font-black text-white tracking-tighter leading-none font-mono">₺{data.totalValue.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                  </div>
-                </div>
-                </div>
+                </RowWrapper>
               );
-            })}
-          </div>
-        </div>
-
-        {/* YATIRIMLAR */}
-        <div className="flex flex-col gap-6">
-          <div className="flex justify-between items-end px-2">
-            <div className="flex items-center gap-3">
-              <div className="w-1 h-6 md:w-1.5 md:h-8 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
-              <h2 className="text-xl md:text-3xl font-black text-white tracking-tighter uppercase">Varlıklar</h2>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-4">
-            {investments.map(item => (
-              <PortfolioListItem key={item.id} item={item} onDelete={() => removePortfolioItem(item.id)} isInvestment />
-            ))}
-            {investments.length === 0 && <EmptyState text="Yatırım Pozisyonu Bulunmuyor" />}
-          </div>
+          })}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ALT BILESENLER (Duzenli Hizalama Icin)
+function SectionWrapper({ title, colorClass, textColor, children, onClick }: any) {
+  return (
+    <div 
+      className={cn("flex justify-between items-center px-2 mb-4 mt-8 first:mt-0 cursor-pointer group/title select-none")}
+      onClick={onClick}
+    >
+      <div className="flex items-center gap-3">
+        <div className={cn("w-1.5 h-8 rounded-full transition-transform group-hover/title:scale-y-110", colorClass)} />
+        <h2 className={cn("text-3xl font-black tracking-tighter transition-opacity group-hover/title:opacity-80", textColor || "text-white")}>
+          {title}
+        </h2>
+      </div>
+      <div onClick={(e) => e.stopPropagation()}>{children}</div>
+    </div>
+  );
+}
+
+function RowWrapper({ children, isSelected, onClick, activeColor, className, showDelete, onDelete, showToggle, onToggle, isIncluded = true }: any) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const colorMap: any = { 
+    amber: "border-amber-500 shadow-amber-500/10", 
+    emerald: "border-emerald-500 shadow-emerald-500/10", 
+    blue: "border-blue-500 shadow-blue-500/10" 
+  };
+
+  // 3 saniye sonra onayı otomatik iptal et
+  useEffect(() => {
+    if (confirmDelete) {
+      const timer = setTimeout(() => setConfirmDelete(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [confirmDelete]);
+
+  return (
+    <motion.div 
+      layout 
+      onClick={confirmDelete ? undefined : onClick}
+      className={cn(
+      "group relative flex items-center gap-4 pl-8 pr-32 py-4 rounded-2xl border transition-all overflow-hidden",
+      !isIncluded ? "opacity-30 grayscale border-white/5 bg-transparent" : isSelected ? cn("bg-zinc-800/80 scale-[1.005] z-10", colorMap[activeColor]) : "bg-zinc-900/40 border-white/5 hover:bg-zinc-900/80",
+      className
+    )}>
+      {children}
+      <div className="absolute right-4 flex items-center gap-2 z-50">
+        {showToggle && (
+          <button 
+            onClick={(e) => { e.stopPropagation(); onToggle && onToggle(e); }}
+            className={cn(
+              "p-3 rounded-xl transition-all border border-white/10 bg-black/60 backdrop-blur-md",
+              isIncluded ? "text-emerald-500 hover:bg-emerald-500/20" : "text-zinc-500 hover:bg-white/10"
+            )}
+          >
+            {isIncluded ? <Eye size={18} /> : <EyeOff size={18} />}
+          </button>
+        )}
+        {showDelete && (
+          <button 
+            type="button"
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              if (!confirmDelete) {
+                setConfirmDelete(true);
+              } else {
+                onDelete && onDelete(e); 
+                setConfirmDelete(false);
+              }
+            }}
+            className={cn(
+              "p-3 rounded-xl transition-all flex items-center gap-2 font-black text-[10px] tracking-widest",
+              confirmDelete 
+                ? "bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]" 
+                : "text-red-500 hover:text-white hover:bg-red-500/40 border border-red-500/20 bg-black/60 backdrop-blur-md"
+            )}
+          >
+            {confirmDelete ? "SİLİNSİN Mİ?" : <Trash2 size={18} />}
+          </button>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+function ValueColumn({ value, percent }: any) {
+  return (
+    <div className={cn("flex-[1] text-xl font-bold font-mono tracking-tighter", value >= 0 ? "text-emerald-500" : "text-red-500")}>
+      {value >= 0 ? '+' : ''}₺{value.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
+      <span className="text-sm font-black ml-2 opacity-70">({value >= 0 ? '+' : ''}{percent.toFixed(2)}%)</span>
+    </div>
+  );
+}
+
+function BadgeGroup({ amount, weight, isSelected, color, isAsset }: any) {
+  const baseClass = "text-xs font-black uppercase px-2.5 py-1 rounded-lg border tracking-widest whitespace-nowrap";
+  const colors: any = {
+    amber: isSelected ? "bg-amber-500/10 border-amber-500/20 text-amber-500" : "bg-blue-500/5 border-blue-500/10 text-blue-500/60",
+    emerald: isSelected ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-blue-500/5 border-blue-500/10 text-blue-500/60",
+    blue: "bg-blue-500/5 border-blue-500/10 text-blue-500/60"
+  };
+  return (
+    <div className="flex items-center gap-2">
+      <span className={cn(baseClass, colors[color || 'blue'])}>{amount.toLocaleString('tr-TR')} {isAsset ? 'ADET' : 'VRLK'}</span>
+      <span className={cn(baseClass, "bg-emerald-500/5 border-emerald-500/10 text-emerald-500/70")}>%{weight.toFixed(1)}</span>
     </div>
   );
 }
@@ -216,120 +381,39 @@ function SummaryCard({ label, value, percent, icon, isNegative }: any) {
     <div className="bg-zinc-900/60 border border-white/5 p-6 rounded-[1.8rem] hover:bg-zinc-900 transition-all group overflow-hidden relative">
       <div className="flex items-center gap-2 mb-4">
         {icon}
-        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{label}</span>
-        {percent && <span className={cn("ml-auto text-xs font-black italic", isNegative ? "text-red-500" : "text-emerald-500")}>{isNegative ? '' : '+'}{percent}</span>}
+        <span className="text-xs font-black text-zinc-500 tracking-widest leading-none capitalize">{label.toLowerCase()}</span>
+        {percent && <span className={cn("ml-auto text-sm font-black", isNegative ? "text-red-500" : "text-emerald-500")}>{isNegative ? '' : '+'}{percent}</span>}
       </div>
-      <div className={cn("text-2xl md:text-3xl font-black tracking-tighter italic", isNegative ? "text-red-500" : "text-white")}>{value}</div>
+      <div className={cn("text-3xl md:text-4xl font-black tracking-tighter font-mono leading-none", isNegative ? "text-red-500" : "text-white")}>{value}</div>
     </div>
   );
 }
 
-function AccountSummaryItem({ data, onDelete }: { data: any, onDelete: () => void }) {
-  const totalValue = data.totalValue;
-  const totalGain = data.totalGain;
-  const dailyGain = data.dailyGain;
-  const assetCount = data.amount;
-  const totalCost = data.totalCost;
-  const pnlPercent = totalCost > 0 ? (totalGain / totalCost) * 100 : 0;
-  
-  // Günlük yüzdeyi hesapla (Bugünkü kar / dünkü toplam değer)
-  const yesterdayValue = totalValue - dailyGain;
-  const dailyPercent = yesterdayValue > 0 ? (dailyGain / yesterdayValue) * 100 : 0;
+function PlusButton({ label, onClick, color }: any) {
+  const colors: any = { blue: "text-blue-500 bg-blue-500/10 border-blue-500/20 hover:bg-blue-500", amber: "text-amber-500 bg-amber-500/10 border-amber-500/20 hover:bg-amber-500 hover:text-black" };
+  return (
+    <button onClick={onClick} className={cn("text-xs font-black px-4 py-2 rounded-xl border transition-all flex items-center gap-2 tracking-[0.15em]", colors[color])}>
+      <Plus size={14} /> {label}
+    </button>
+  );
+}
+
+function AccountSummaryItem({ data, isIncluded, isSelected, weight, onSelect, onToggle, onDelete }: any) {
+  const yesterdayValue = data.totalValue - data.dailyGain;
+  const dailyPercent = yesterdayValue > 0 ? (data.dailyGain / yesterdayValue) * 100 : 0;
+  const pnlPercent = data.totalCost > 0 ? (data.totalGain / data.totalCost) * 100 : 0;
 
   return (
-    <div className="bg-zinc-900/40 border border-white/5 p-5 rounded-[2rem] flex flex-col sm:flex-row sm:items-center justify-between hover:bg-zinc-900/80 transition-all group relative overflow-hidden gap-6 sm:pr-24">
-      <div className="flex items-center gap-5">
-        <div>
-          <div className="text-3xl font-black text-white italic tracking-tighter ml-4 flex items-center gap-4">
-            {data.accountName}
-            <span className="text-[10px] font-black text-blue-500/60 uppercase bg-blue-500/5 px-2.5 py-1 rounded-lg border border-blue-500/10 not-italic tracking-[0.2em]">
-              {assetCount} VARLIK
-            </span>
-          </div>
-        </div>
+    <RowWrapper isSelected={isSelected} onClick={onSelect} activeColor="amber" isIncluded={isIncluded} showToggle onToggle={onToggle} showDelete onDelete={onDelete}>
+      <div className="flex-[3] flex items-center gap-4">
+        <span className={cn("text-2xl font-bold tracking-tighter truncate w-[160px]", isSelected ? "text-amber-500" : "text-white")}>{data.accountName}</span>
+        <BadgeGroup amount={data.amount} weight={weight} isSelected={isSelected} color="amber" />
       </div>
-
-      <div className="flex flex-1 justify-between sm:justify-end items-center gap-8 md:gap-14">
-        <div className="text-left sm:text-right">
-          <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1.5 leading-none">Günlük Getiri (Net)</div>
-          <div className={cn("text-base md:text-xl font-black tracking-tighter leading-none flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4 font-mono", dailyGain >= 0 ? "text-emerald-500" : "text-red-500")}>
-            <span>{dailyGain >= 0 ? '+' : ''}₺{dailyGain.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span className="text-sm md:text-lg opacity-80 font-black">
-              {`(${dailyGain >= 0 ? '+' : ''}${dailyPercent.toFixed(2)}%)`}
-            </span>
-          </div>
-        </div>
-        <div className="text-left sm:text-right">
-          <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1.5 leading-none">Toplam Kar/Zarar</div>
-          <div className={cn("text-base md:text-xl font-black tracking-tighter leading-none flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4 font-mono", totalGain >= 0 ? "text-emerald-500" : "text-red-500")}>
-            <span>{totalGain >= 0 ? '+' : ''}₺{totalGain.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span className="text-sm md:text-lg opacity-80 font-black">
-              {`(${totalGain >= 0 ? '+' : ''}${pnlPercent.toFixed(2)}%)`}
-            </span>
-          </div>
-        </div>
-        <div className="text-right min-w-[120px]">
-          <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 leading-none opacity-40">Hesap Toplam Değeri</div>
-          <div className="text-xl md:text-3xl font-black text-white tracking-tighter leading-none font-mono">₺{totalValue.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-        </div>
+      <ValueColumn value={data.dailyGain} percent={dailyPercent} />
+      <ValueColumn value={data.totalGain} percent={pnlPercent} />
+      <div className="flex-[1] text-right text-2xl font-mono font-bold tracking-tighter text-white">
+        ₺{data.totalValue.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
       </div>
-
-      <button onClick={onDelete} className="absolute right-6 top-1/2 -translate-y-1/2 p-3 text-zinc-700 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/5"><Trash2 size={18} /></button>
-    </div>
+    </RowWrapper>
   );
 }
-
-function PortfolioListItem({ item, onDelete, isInvestment }: { item: PortfolioItem, onDelete: () => void, isInvestment?: boolean }) {
-  const currentPrice = item.currentPrice || item.purchasePrice || 0;
-  const value = item.amount * currentPrice;
-  const totalPnl = (currentPrice - item.purchasePrice) * item.amount;
-  const totalPnlPercent = item.purchasePrice > 0 ? ((currentPrice - item.purchasePrice) / item.purchasePrice) * 100 : 0;
-  
-  // Günlük yüzdeyi hesapla
-  const dailyGainVal = item.dailyChange ? (value * item.dailyChange) / 100 : 0;
-  const yesterdayValue = value - dailyGainVal;
-  const dailyPercent = yesterdayValue > 0 ? (dailyGainVal / yesterdayValue) * 100 : 0;
-
-  return (
-    <div className="bg-zinc-900/40 border border-white/5 p-5 rounded-[2rem] flex flex-col sm:flex-row sm:items-center justify-between hover:bg-zinc-900/80 transition-all group relative overflow-hidden gap-6 sm:pr-24">
-      <div className="flex items-center gap-5">
-        <div>
-          <div className="text-xl md:text-3xl font-black text-white tracking-tighter ml-4 flex items-center gap-4 uppercase">
-            {item.symbol.replace('.IS', '')}
-            <span className="text-[9px] md:text-[10px] font-black text-blue-400/60 uppercase bg-blue-400/5 px-2 py-0.5 md:px-2.5 md:py-1 rounded-lg border border-blue-400/10 tracking-widest leading-none">
-              {item.amount.toLocaleString('tr-TR')} ADET
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 sm:flex sm:flex-1 justify-between sm:justify-end items-center gap-4 sm:gap-8 md:gap-14">
-        <div className="text-left sm:text-right">
-          <div className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1 leading-none">Günlük Getiri</div>
-          <div className={cn("text-base md:text-xl font-black tracking-tighter leading-none flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4 font-mono", dailyGainVal >= 0 ? "text-emerald-500" : "text-red-500")}>
-            <span>{dailyGainVal >= 0 ? '+' : ''}₺{dailyGainVal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span className="text-sm md:text-lg opacity-80 font-black">{`(${dailyGainVal >= 0 ? '+' : ''}${dailyPercent.toFixed(2)}%)`}</span>
-          </div>
-        </div>
-        <div className="text-left sm:text-right">
-          <div className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1 leading-none">Toplam K/Z</div>
-          <div className={cn("text-base md:text-xl font-black tracking-tighter leading-none flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4 font-mono", totalPnl >= 0 ? "text-emerald-500" : "text-red-500")}>
-            <span>{totalPnl >= 0 ? '+' : ''}₺{totalPnl.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span className="text-sm md:text-lg opacity-80 font-black">{`(${totalPnl >= 0 ? '+' : ''}${totalPnlPercent.toFixed(2)}%)`}</span>
-          </div>
-        </div>
-        <div className="text-left sm:text-right col-span-2 sm:col-auto sm:min-w-[120px] pt-2 sm:pt-0 border-t border-white/5 sm:border-0 mt-2 sm:mt-0">
-          <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 leading-none opacity-40 text-right">Toplam Değer</div>
-          <div className="text-xl md:text-3xl font-black text-white tracking-tighter leading-none text-right font-mono">₺{value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-        </div>
-      </div>
-
-      <button onClick={onDelete} className="absolute right-6 top-1/2 -translate-y-1/2 p-3 text-zinc-700 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/5"><Trash2 size={18} /></button>
-    </div>
-  );
-}
-
-function EmptyState({ text }: { text: string }) {
-  return <div className="p-10 border border-dashed border-zinc-800 rounded-[2rem] text-center text-zinc-600 font-bold uppercase text-[10px] tracking-[0.2em]">{text}</div>;
-}
-

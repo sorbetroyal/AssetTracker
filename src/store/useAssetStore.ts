@@ -7,7 +7,7 @@ export interface Asset {
   id: string;
   symbol: string;
   name: string;
-  type: 'BIST' | 'US' | 'CRYPTO' | 'COMMODITY';
+  type: 'BIST' | 'US' | 'CRYPTO' | 'COMMODITY' | 'TEFAS' | 'BEFAS';
   strategy: 'Zarar Kes' | 'Kar Al' | 'Dirençten Al' | 'Destekten Al';
   entryPrice: number;
   targetPrice: number;
@@ -18,13 +18,22 @@ export interface Asset {
   createdAt: number;
 }
 
-// 2. Portföy (Gerçek Varlık) Tipi
+// 2. Hesap Tipi
+export interface Account {
+  id: string;
+  name: string;
+  isIncluded: boolean;
+  createdAt: number;
+}
+
+// 3. Portföy (Gerçek Varlık) Tipi
 export interface PortfolioItem {
   id: string;
-  accountName: string;
-  assetType: 'BIST' | 'US' | 'CRYPTO' | 'COMMODITY' | 'BANK';
+  accountId: string;
+  accountName?: string;
+  assetType: 'BIST' | 'US' | 'CRYPTO' | 'COMMODITY' | 'TEFAS' | 'BEFAS';
   symbol: string;
-  purchaseAt: string; // ISO Date String
+  purchaseAt: string;
   purchasePrice: number;
   amount: number;
   currency: string;
@@ -36,9 +45,11 @@ export interface PortfolioItem {
 interface AssetStore {
   // States
   assets: Asset[];
+  accounts: Account[];
   portfolioHoldings: PortfolioItem[];
   indices: Record<string, { price: number; change: number; name: string }>;
   indexTargets: Record<string, { targetPrice: number; strategy: string }>;
+  rates: { USD: number };
   isLoading: boolean;
   refreshCount: number;
   lastUpdated: string | null;
@@ -49,31 +60,41 @@ interface AssetStore {
   setLastUpdated: (time: string) => void;
   setIsUpdating: (val: boolean) => void;
   setIndices: (indices: Record<string, any>) => void;
+  updateRates: (rates: { USD: number }) => void;
   updateIndices: (symbol: string, data: { price: number; change: number; name: string }) => void;
   updateIndexTarget: (symbol: string, targetPrice: number, strategy: string) => void;
 
-  // Actions - Terminal (assets table)
+  // Actions - Terminal
   fetchAssets: () => Promise<void>;
   addAsset: (asset: Omit<Asset, 'id' | 'createdAt'>) => Promise<void>;
   removeAsset: (id: string) => Promise<void>;
   updateAsset: (id: string, updates: Partial<Asset>) => Promise<void>;
-  updateAssetPrice: (id: string, data: Partial<Asset>) => void; // Yeni
+  updateAssetPrice: (id: string, data: Partial<Asset>) => void;
 
-  // Actions - Portfolio (portfolio table)
+  // Actions - Accounts
+  fetchAccounts: () => Promise<void>;
+  addAccount: (name: string) => Promise<string | null>;
+  removeAccount: (id: string) => Promise<void>;
+  toggleAccountInclusion: (id: string, isIncluded: boolean) => Promise<void>;
+
+  // Actions - Portfolio
   fetchPortfolio: () => Promise<void>;
-  addPortfolioItem: (item: Omit<PortfolioItem, 'id' | 'createdAt'>) => Promise<void>;
+  addPortfolioItem: (item: Omit<PortfolioItem, 'id' | 'createdAt' | 'accountName'>) => Promise<void>;
   removePortfolioItem: (id: string) => Promise<void>;
   updatePortfolioItem: (id: string, updates: Partial<PortfolioItem>) => Promise<void>;
-  updatePortfolioPrice: (id: string, data: Partial<PortfolioItem>) => void; // Yeni
+  updatePortfolioPrice: (id: string, data: Partial<PortfolioItem>) => void;
+  syncPortfolioToAssets: () => Promise<void>;
 }
 
 export const useAssetStore = create<AssetStore>()(
   persist(
     (set, get) => ({
       assets: [],
+      accounts: [],
       portfolioHoldings: [],
       indices: {},
       indexTargets: {},
+      rates: { USD: 0 },
       isLoading: false,
       refreshCount: 0,
       lastUpdated: null,
@@ -83,6 +104,7 @@ export const useAssetStore = create<AssetStore>()(
       setLastUpdated: (time) => set({ lastUpdated: time }),
       setIsUpdating: (val) => set({ isUpdating: val }),
       setIndices: (indices) => set({ indices }),
+      updateRates: (rates) => set({ rates }),
       
       updateIndices: (symbol, data) => set((state) => ({
         indices: { ...state.indices, [symbol]: data }
@@ -120,47 +142,93 @@ export const useAssetStore = create<AssetStore>()(
       },
 
       addAsset: async (asset) => {
-        const { data, error } = await supabase.from('assets').insert([{
-          symbol: asset.symbol,
-          name: asset.name,
-          type: asset.type,
-          strategy: asset.strategy,
-          entry_price: asset.entryPrice,
-          target_price: asset.targetPrice,
-          currency: asset.currency,
-        }]).select().single();
+        const { assets, updateAsset } = get();
+        const existingPending = assets.find(a => 
+          a.targetPrice === 0 && 
+          (a.symbol === asset.symbol || a.symbol.replace('.IS', '') === asset.symbol.replace('.IS', ''))
+        );
 
-        if (error) { console.error('Add asset error:', error); return; }
-        if (data) {
-          const newAsset: Asset = {
-            id: data.id,
-            symbol: data.symbol,
-            name: data.name,
-            type: data.type,
-            strategy: data.strategy,
-            entryPrice: data.entry_price,
-            targetPrice: data.target_price,
-            currency: data.currency,
-            createdAt: new Date(data.created_at).getTime(),
-          };
-          set((state) => ({ assets: [...state.assets, newAsset] }));
+        if (existingPending) {
+          await updateAsset(existingPending.id, asset);
+        } else {
+          const { data, error } = await supabase.from('assets').insert([{
+            symbol: asset.symbol,
+            name: asset.name,
+            type: asset.type,
+            strategy: asset.strategy,
+            entry_price: asset.entryPrice,
+            target_price: asset.targetPrice,
+            currency: asset.currency,
+          }]).select().single();
+
+          if (error) { 
+            console.error('Add asset error:', error); 
+            return; 
+          }
+          if (data) {
+            const newAsset: Asset = {
+              id: data.id,
+              symbol: data.symbol,
+              name: data.name,
+              type: data.type,
+              strategy: data.strategy,
+              entryPrice: data.entry_price,
+              targetPrice: data.target_price,
+              currency: data.currency,
+              createdAt: new Date(data.created_at).getTime(),
+            };
+            set((state) => ({ assets: [...state.assets, newAsset] }));
+          }
         }
       },
 
       removeAsset: async (id) => {
-        const { error } = await supabase.from('assets').delete().eq('id', id);
-        if (!error) set((state) => ({ assets: state.assets.filter((a) => a.id !== id) }));
+        const { assets, portfolioHoldings, updateAsset } = get();
+        const assetToRemove = assets.find(a => a.id === id);
+        if (!assetToRemove) return;
+        
+        // Portföyde mi kontrolü
+        const isInPortfolio = portfolioHoldings.some(h => 
+          h.symbol === assetToRemove.symbol || 
+          h.symbol.replace('.IS', '') === assetToRemove.symbol.replace('.IS', '')
+        );
+
+        // Zaten hedefi olmayan (chip) bir başka kopyası var mı?
+        const alreadyHasPending = assets.some(a => 
+          a.id !== id && 
+          a.targetPrice === 0 && 
+          (a.symbol === assetToRemove.symbol || a.symbol.replace('.IS', '') === assetToRemove.symbol.replace('.IS', ''))
+        );
+
+        // Hala hedefi olan BAŞKA bir kopyası var mı?
+        const hasOtherActiveTargets = assets.some(a => 
+          a.id !== id && 
+          a.targetPrice > 0 && 
+          (a.symbol === assetToRemove.symbol || a.symbol.replace('.IS', '') === assetToRemove.symbol.replace('.IS', ''))
+        );
+
+        // Bu bir "chip" mi?
+        const isChip = assetToRemove.targetPrice === 0;
+
+        if (isInPortfolio && !isChip && !alreadyHasPending && !hasOtherActiveTargets) {
+          // Portföyde var VE bu son aktif hedefiyse VE henüz chip kopyası yoksa: Chip'e döndür
+          await updateAsset(id, { targetPrice: 0, strategy: '' });
+        } else {
+          // Aktif başka hedefi varsa VEYA portföyde yoksa VEYA zaten bir chip kopyası varsa: DB'den tamamen sil
+          await supabase.from('assets').delete().eq('id', id);
+          set((state) => ({ assets: state.assets.filter((a) => a.id !== id) }));
+        }
       },
 
       updateAsset: async (id, updates) => {
         const supabaseUpdates: any = {};
-        if (updates.symbol) supabaseUpdates.symbol = updates.symbol;
-        if (updates.name) supabaseUpdates.name = updates.name;
-        if (updates.type) supabaseUpdates.type = updates.type;
-        if (updates.strategy) supabaseUpdates.strategy = updates.strategy;
-        if (updates.entryPrice) supabaseUpdates.entry_price = updates.entryPrice;
-        if (updates.targetPrice) supabaseUpdates.target_price = updates.targetPrice;
-        if (updates.currency) supabaseUpdates.currency = updates.currency;
+        if (updates.symbol !== undefined) supabaseUpdates.symbol = updates.symbol;
+        if (updates.name !== undefined) supabaseUpdates.name = updates.name;
+        if (updates.type !== undefined) supabaseUpdates.type = updates.type;
+        if (updates.strategy !== undefined) supabaseUpdates.strategy = updates.strategy;
+        if (updates.entryPrice !== undefined) supabaseUpdates.entry_price = updates.entryPrice;
+        if (updates.targetPrice !== undefined) supabaseUpdates.target_price = updates.targetPrice;
+        if (updates.currency !== undefined) supabaseUpdates.currency = updates.currency;
 
         await supabase.from('assets').update(supabaseUpdates).eq('id', id);
         set((state) => ({ assets: state.assets.map((a) => (a.id === id ? { ...a, ...updates } : a)) }));
@@ -170,20 +238,69 @@ export const useAssetStore = create<AssetStore>()(
         assets: state.assets.map((a) => (a.id === id ? { ...a, ...data } : a))
       })),
 
+      // ACCOUNTS METHODS
+      fetchAccounts: async () => {
+        const { data, error } = await supabase.from('accounts').select('*').order('name');
+        if (!error && data) {
+          set({ accounts: data.map(a => ({ 
+            id: a.id, 
+            name: a.name, 
+            isIncluded: a.is_included,
+            createdAt: new Date(a.created_at).getTime() 
+          })) });
+        }
+      },
+
+      addAccount: async (name) => {
+        const { data, error } = await supabase.from('accounts').insert([{ name }]).select().single();
+        if (error) { console.error('Add account error:', error); return null; }
+        if (data) {
+          const newAcc = { 
+            id: data.id, 
+            name: data.name, 
+            isIncluded: data.is_included,
+            createdAt: new Date(data.created_at).getTime() 
+          };
+          set(state => ({ accounts: [...state.accounts, newAcc] }));
+          return data.id;
+        }
+        return null;
+      },
+
+      removeAccount: async (id) => {
+        const { error } = await supabase.from('accounts').delete().eq('id', id);
+        if (!error) {
+          set(state => ({
+            accounts: state.accounts.filter(a => a.id !== id),
+            portfolioHoldings: state.portfolioHoldings.filter(h => h.accountId !== id)
+          }));
+        }
+      },
+
+      toggleAccountInclusion: async (id, isIncluded) => {
+        const { error } = await supabase.from('accounts').update({ is_included: isIncluded }).eq('id', id);
+        if (!error) {
+          set(state => ({
+            accounts: state.accounts.map(a => a.id === id ? { ...a, isIncluded } : a)
+          }));
+        }
+      },
+
       // PORTFOLIO METHODS
       fetchPortfolio: async () => {
         set({ isLoading: true });
         try {
           const { data, error } = await supabase
             .from('portfolio')
-            .select('*')
+            .select('*, accounts(name)')
             .order('created_at', { ascending: true });
 
           if (error) throw error;
           if (data) {
             set({ portfolioHoldings: data.map((item: any) => ({
               id: item.id,
-              accountName: item.account_name,
+              accountId: item.account_id,
+              accountName: item.accounts?.name || 'Bilinmeyen Hesap',
               assetType: item.asset_type,
               symbol: item.symbol,
               purchaseAt: item.purchase_at,
@@ -199,20 +316,21 @@ export const useAssetStore = create<AssetStore>()(
 
       addPortfolioItem: async (item) => {
         const { data, error } = await supabase.from('portfolio').insert([{
-          account_name: item.accountName,
+          account_id: item.accountId,
           asset_type: item.assetType,
           symbol: item.symbol,
           purchase_at: item.purchaseAt,
           purchase_price: item.purchasePrice,
           amount: item.amount,
           currency: item.currency,
-        }]).select().single();
+        }]).select('*, accounts(name)').single();
 
         if (error) { console.error('Add portfolio item error:', error); return; }
         if (data) {
           const newItem: PortfolioItem = {
             id: data.id,
-            accountName: data.account_name,
+            accountId: data.account_id,
+            accountName: data.accounts?.name,
             assetType: data.asset_type,
             symbol: data.symbol,
             purchaseAt: data.purchase_at,
@@ -222,6 +340,29 @@ export const useAssetStore = create<AssetStore>()(
             createdAt: new Date(data.created_at).getTime(),
           };
           set((state) => ({ portfolioHoldings: [...state.portfolioHoldings, newItem] }));
+
+          // OTOMATİK HEDEF TAKİBİ (TERMINAL) EKLEME
+          // Sadece BIST, US ve CRYPTO için ve eğer halihazırda takip listesinde yoksa
+          const autoSyncTypes = ['BIST', 'US', 'CRYPTO'];
+          if (autoSyncTypes.includes(newItem.assetType)) {
+            const currentAssets = get().assets;
+            const alreadyInTargets = currentAssets.some(a => 
+              a.symbol === newItem.symbol || 
+              a.symbol.replace('.IS', '') === newItem.symbol.replace('.IS', '')
+            );
+            
+            if (!alreadyInTargets) {
+              await get().addAsset({
+                symbol: newItem.symbol,
+                name: newItem.symbol,
+                type: newItem.assetType as any,
+                strategy: 'Kar Al',
+                entryPrice: newItem.purchasePrice,
+                targetPrice: 0,
+                currency: newItem.currency
+              });
+            }
+          }
         }
       },
 
@@ -230,9 +371,24 @@ export const useAssetStore = create<AssetStore>()(
         if (!error) set((state) => ({ portfolioHoldings: state.portfolioHoldings.filter((a) => a.id !== id) }));
       },
 
+      removePortfolioItemsBySymbol: async (accountId, symbol) => {
+        const { error } = await supabase
+          .from('portfolio')
+          .delete()
+          .match({ account_id: accountId, symbol: symbol });
+        
+        if (!error) {
+          set(state => ({
+            portfolioHoldings: state.portfolioHoldings.filter(h => 
+              !(h.accountId === accountId && h.symbol === symbol)
+            )
+          }));
+        }
+      },
+
       updatePortfolioItem: async (id, updates) => {
         const supabaseUpdates: any = {};
-        if (updates.accountName) supabaseUpdates.account_name = updates.accountName;
+        if (updates.accountId) supabaseUpdates.account_id = updates.accountId;
         if (updates.assetType) supabaseUpdates.asset_type = updates.assetType;
         if (updates.symbol) supabaseUpdates.symbol = updates.symbol;
         if (updates.purchaseAt) supabaseUpdates.purchase_at = updates.purchaseAt;
@@ -248,10 +404,56 @@ export const useAssetStore = create<AssetStore>()(
         portfolioHoldings: state.portfolioHoldings.map((a) => (a.id === id ? { ...a, ...data } : a))
       })),
 
+      syncPortfolioToAssets: async () => {
+        const { portfolioHoldings, assets, addAsset } = get();
+        const autoSyncTypes = ['BIST', 'US', 'CRYPTO'];
+        
+        // 1. Portföydeki uygun tipteki benzersiz sembolleri bul
+        const portfolioSymbols = portfolioHoldings
+          .filter(h => autoSyncTypes.includes(h.assetType))
+          .reduce((acc, h) => {
+            if (!acc[h.symbol]) {
+              acc[h.symbol] = { 
+                symbol: h.symbol, 
+                type: h.assetType, 
+                price: h.purchasePrice, 
+                currency: h.currency 
+              };
+            }
+            return acc;
+          }, {} as Record<string, any>);
+
+        // 2. Eksik olanları ekle
+        let addedCount = 0;
+        for (const sym of Object.values(portfolioSymbols)) {
+          const exists = assets.some(a => 
+            a.symbol === sym.symbol || 
+            a.symbol.replace('.IS', '') === sym.symbol.replace('.IS', '')
+          );
+          if (!exists) {
+            await addAsset({
+              symbol: sym.symbol,
+              name: sym.symbol,
+              type: sym.type,
+              strategy: 'Trend Takibi',
+              targetPrice: 0,
+              entryPrice: sym.price,
+              targetPrice: 0,
+              currency: sym.currency
+            });
+            addedCount++;
+          }
+        }
+        
+        if (addedCount > 0) {
+          get().triggerRefresh();
+        }
+      },
+
     }),
     {
-      name: 'asset-tracker-storage-v2',
-      partialize: (state) => ({ assets: state.assets, portfolioHoldings: state.portfolioHoldings }),
+      name: 'asset-tracker-storage-v4',
+      partialize: (state) => ({ assets: state.assets, portfolioHoldings: state.portfolioHoldings, accounts: state.accounts }),
     }
   )
 );

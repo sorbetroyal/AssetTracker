@@ -15,14 +15,15 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export default function Home() {
-  const { fetchAssets, fetchPortfolio } = useAssetStore();
+  const { fetchAssets, fetchAccounts, fetchPortfolio } = useAssetStore();
   const [activeTab, setActiveTab] = useState<'terminal' | 'portfolio'>('terminal');
 
   // Başlangıçta verileri Supabase'den çek
   useEffect(() => {
     fetchAssets();
+    fetchAccounts();
     fetchPortfolio();
-  }, [fetchAssets, fetchPortfolio]);
+  }, [fetchAssets, fetchAccounts, fetchPortfolio]);
 
   // Canlı veri takibi başlatılıyor
   usePriceData();
@@ -36,26 +37,26 @@ export default function Home() {
             <button
               onClick={() => setActiveTab('terminal')}
               className={cn(
-                "flex items-center gap-3 px-6 py-2.5 rounded-[1.1rem] text-xs font-black uppercase tracking-widest transition-all",
+                "flex items-center gap-3 px-6 py-2.5 rounded-[1.1rem] text-xs font-black tracking-widest transition-all",
                 activeTab === 'terminal' 
                   ? "bg-white text-black shadow-xl scale-105" 
                   : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
               )}
             >
               <LayoutGrid size={16} />
-              Terminal
+              Hedef Takibi
             </button>
             <button
               onClick={() => setActiveTab('portfolio')}
               className={cn(
-                "flex items-center gap-3 px-6 py-2.5 rounded-[1.1rem] text-xs font-black uppercase tracking-widest transition-all",
+                "flex items-center gap-3 px-6 py-2.5 rounded-[1.1rem] text-xs font-black tracking-widest transition-all",
                 activeTab === 'portfolio' 
                   ? "bg-white text-black shadow-xl scale-105" 
                   : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
               )}
             >
               <PieChart size={16} />
-              Portföy
+              Varlık Takibi
             </button>
           </div>
         </nav>
