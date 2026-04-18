@@ -8,51 +8,43 @@ const yf = new YahooFinance();
  */
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// SENIN OZEL GOOGLE PROXY URL'IN
+const GAS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbxHnFmv5fAJA1s-nGwsT8jiNkCDpwQQc5UB0fElp4X50sMcqXsBPrHXRkFdmUBXGy54g/exec';
+
 /**
- * TEFAS/BEFAS Veri Çekici (Retry destekli)
- * borsa-mcp'den alınan retry ve WAF bypass mantığı entegre edildi.
+ * Google Apps Script Proxy üzerinden veriyi çeker.
+ * Bu sayede Vercel'in engellenen IP'leri asilir.
  */
-async function fetchTefasWithRetry(symbol: string, type: string, retries = 3) {
-  const url = 'https://www.tefas.gov.tr/api/DB/GetAllFundAnalyzeData';
+async function fetchTefasViaProxy(symbol: string, type: string, retries = 3) {
   const body = new URLSearchParams();
   body.append('dil', 'TR');
   body.append('fonkod', symbol);
 
-  const headers = {
-    'Accept': 'application/json, text/plain, */*',
-    'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-    'Origin': 'https://www.tefas.gov.tr',
-    'Pragma': 'no-cache',
-    'Referer': 'https://www.tefas.gov.tr/TarihselVeriler.aspx',
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'X-Requested-With': 'XMLHttpRequest'
-  };
-
   for (let i = 0; i < retries; i++) {
     try {
-      const response = await fetch(url, {
+      const response = await fetch(GAS_PROXY_URL, {
         method: 'POST',
-        headers: headers,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
         body: body.toString(),
-        // Vercel'de timeout riskine karşı fetch'i hızlı tutuyoruz
-        signal: AbortSignal.timeout(8000) 
+        signal: AbortSignal.timeout(15000) // Google bazen yavas olabilir
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const contentType = response.headers.get('content-type') || '';
-      if (contentType.includes('text/html')) {
-        throw new Error('WAF_BLOCK_DETECTED');
+        throw new Error(`Proxy HTTP ${response.status}`);
       }
 
       const data = await response.json();
+      
+      // Google Bridge bazen JSON icinde error donebilir
+      if (data.error) {
+        throw new Error(`Proxy Internal Error: ${data.error}`);
+      }
+
+      // Veri kontrolü
       if (!data || !data.fundInfo || data.fundInfo.length === 0) {
-        throw new Error('EMPTY_DATA');
+        throw new Error('EMPTY_DATA_FROM_PROXY');
       }
 
       const info = data.fundInfo[0];
@@ -62,16 +54,13 @@ async function fetchTefasWithRetry(symbol: string, type: string, retries = 3) {
         price: parseFloat(info.SONFIYAT || '0'),
         name: info.FONUNVAN,
         changePercent: parseFloat(info.GUNLUKGETIRI || '0'),
-        source: 'tefas'
+        source: 'google-proxy'
       };
 
     } catch (error: any) {
-      console.warn(`Attempt ${i + 1} failed for ${symbol}: ${error.message}`);
+      console.warn(`[Proxy Attempt ${i + 1}] failed for ${symbol}: ${error.message}`);
       if (i < retries - 1) {
-        // Artan sürelerle bekle: 0.5s, 1s, 2s
-        await delay(500 * Math.pow(2, i)); 
-      } else {
-        console.error(`All ${retries} attempts failed for ${symbol}`);
+        await delay(1000); 
       }
     }
   }
@@ -125,11 +114,10 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 2. TEFAS/BEFAS (Retry Mekanizmalı)
+    // 2. Google Proxy üzerinden TEFAS/BEFAS
     if (fundSymbolsWithTypes.length > 0) {
-      // Paralel fetch ama her biri kendi içinde retry yapıyor
       const fundResults = await Promise.all(
-        fundSymbolsWithTypes.map(item => fetchTefasWithRetry(item.symbol, item.type))
+        fundSymbolsWithTypes.map(item => fetchTefasViaProxy(item.symbol, item.type))
       );
       const validFundResults = fundResults.filter(r => r !== null);
       finalResults = [...finalResults, ...validFundResults];
