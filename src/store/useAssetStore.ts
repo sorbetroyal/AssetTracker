@@ -312,7 +312,7 @@ export const useAssetStore = create<AssetStore>()(
 
           if (error) throw error;
           if (data) {
-            set({ portfolioHoldings: data.map((item: any) => ({
+            const holdings = data.map((item: any) => ({
               id: item.id,
               accountId: item.account_id,
               accountName: item.accounts?.name || 'Bilinmeyen Hesap',
@@ -323,7 +323,27 @@ export const useAssetStore = create<AssetStore>()(
               amount: item.amount,
               currency: item.currency,
               createdAt: new Date(item.created_at).getTime(),
-            }))});
+            }));
+            set({ portfolioHoldings: holdings });
+
+            // OTOMATİK YETİM CHIP TEMİZLİĞİ (SAYFA YÜKLENDİĞİNDE)
+            const currentAssets = get().assets;
+            const orphanedChips = currentAssets.filter(a => 
+              a.targetPrice === 0 && 
+              !holdings.some(h => 
+                h.symbol === a.symbol || 
+                h.symbol.replace('.IS', '') === a.symbol.replace('.IS', '')
+              )
+            );
+
+            if (orphanedChips.length > 0) {
+              for (const chip of orphanedChips) {
+                await supabase.from('assets').delete().eq('id', chip.id);
+              }
+              set(state => ({
+                assets: state.assets.filter(a => !orphanedChips.some(oc => oc.id === a.id))
+              }));
+            }
           }
         } catch (error) { console.error('Portfolio fetch error:', error); }
         finally { set({ isLoading: false }); }
