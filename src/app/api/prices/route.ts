@@ -3,6 +3,20 @@ import { supabase } from '@/lib/supabase';
 import YahooFinance from 'yahoo-finance2';
 
 const yf = new YahooFinance();
+const TEFAS_API_URL = process.env.TEFAS_API_URL || 'http://127.0.0.1:8000';
+
+async function fetchFromTefasService(symbols: string[]): Promise<any[]> {
+  if (!TEFAS_API_URL || symbols.length === 0) return [];
+  try {
+    const url = `${TEFAS_API_URL}/prices?symbols=${symbols.join(',')}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.error('[TEFAS Service] Fetch Hatasi:', err);
+    return [];
+  }
+}
 
 async function fetchFundsFromSupabase(symbols: string[]): Promise<any[]> {
   try {
@@ -66,7 +80,34 @@ export async function GET(req: NextRequest) {
     });
 
     // 2. SUPABASE'DE OLMAYANLARI YAHOO'DAN ÇEK
-    const missingSymbols = allSymbols.filter(s => !foundInSupabase.has(s.toUpperCase()));
+    // KRITIK: Sadece Yahoo'da bulunabilecek tipleri filtrele. 
+    // TEFAS/BEFAS sembolleri Yahoo'da baska varliklarla cakistigi icin onlari hariç tut.
+    const yahooCompatibleTypes = ['BIST', 'US', 'CRYPTO', 'INDEX', 'COMMODITY', 'FOREIGN_CURRENCY'];
+    
+    const missingSymbols = allSymbols.filter(s => {
+      const type = typeBySymbol[s.toUpperCase()];
+      return !foundInSupabase.has(s.toUpperCase()) && yahooCompatibleTypes.includes(type);
+    });
+
+    // 3. TEFAS / BEFAS OLUP CACHE'DE OLMAYANLARI PYTHON SERVISINDEN ÇEK
+    const missingTefasSymbols = allSymbols.filter(s => {
+      const type = typeBySymbol[s.toUpperCase()];
+      return !foundInSupabase.has(s.toUpperCase()) && (type === 'TEFAS' || type === 'BEFAS');
+    });
+
+    if (missingTefasSymbols.length > 0) {
+      console.log('[TEFAS Service] Sorgulanan:', missingTefasSymbols);
+      const tefasResults = await fetchFromTefasService(missingTefasSymbols);
+      tefasResults.forEach(r => {
+        if (!r.error) {
+          finalResults.push({
+            ...r,
+            type: typeBySymbol[r.symbol.toUpperCase()] || 'TEFAS',
+            source: 'tefas_service'
+          });
+        }
+      });
+    }
     
     if (missingSymbols.length > 0) {
       console.log('[Yahoo Finance] Sorgulanan:', missingSymbols);

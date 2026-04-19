@@ -48,6 +48,11 @@ export async function GET(req: NextRequest) {
     }
 
     // 2. Diğerleri → Yahoo Finance
+    const yahooCompatibleTypes = ['BIST', 'US', 'CRYPTO', 'INDEX', 'COMMODITY', 'FOREIGN_CURRENCY'];
+    if (!yahooCompatibleTypes.includes(type || '')) {
+      return NextResponse.json({ error: 'Bu varlık tipi için Yahoo Finance desteği yok veya çakışma önlendi.' }, { status: 400 });
+    }
+
     // Bugün ise anlık fiyat
     if (targetDate.getTime() >= today.getTime()) {
       const quote = await yf.quote(symbol);

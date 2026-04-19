@@ -33,9 +33,8 @@ export function AssetTable() {
     const referencePrice = asset.last4hPrice || asset.currentPrice || 0;
     if (referencePrice === 0) return false;
 
-    // Akıllı Yön Belirleme: 
-    // Eğer hedef fiyat, giriş fiyatından (veya mevcut fiyattan) yüksekse yukarıyı hedefliyoruzdur.
-    const isUpward = asset.targetPrice > (asset.entryPrice || asset.currentPrice || 0);
+    // Stratejiye göre yön belirleme
+    const isUpward = asset.strategy === 'Kar Al' || asset.strategy === 'Dirençten Al';
     
     if (isUpward) {
       return referencePrice >= asset.targetPrice;
