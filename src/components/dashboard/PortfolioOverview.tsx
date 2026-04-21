@@ -158,44 +158,52 @@ const PortfolioOverview = () => {
             return (
               <div key={acc.id} className={`${isAlternate ? 'bg-zinc-900/40' : 'bg-zinc-900'} border border-zinc-800 rounded-[2rem] overflow-hidden transition-all duration-300 ${!isInc ? 'opacity-40 grayscale' : ''}`}>
                 <div className="w-full flex items-center p-7 gap-4">
-                  <div className="flex flex-col items-center gap-0.5 min-w-[32px]">
-                    <button onClick={() => toggleAccountInclusion(acc.id, !isInc)} className={`p-1.5 transition-colors ${isInc ? 'text-zinc-500 hover:text-blue-500' : 'text-zinc-700 hover:text-zinc-400'}`}>
-                      {isInc ? <Eye size={16} /> : <EyeOff size={16} />}
-                    </button>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteModal({
-                          isOpen: true,
-                          type: 'account',
-                          id: acc.id,
-                          name: acc.name
-                        });
-                      }}
-                      className="p-1.5 text-rose-500/30 hover:text-rose-500 transition-colors"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+                  {isExp && (
+                    <div className="flex flex-col items-center gap-0.5 min-w-[32px] animate-in fade-in duration-300">
+                      <button onClick={() => toggleAccountInclusion(acc.id, !isInc)} className={`p-1.5 transition-colors ${isInc ? 'text-zinc-500 hover:text-blue-500' : 'text-zinc-700 hover:text-zinc-400'}`}>
+                        {isInc ? <Eye size={16} /> : <EyeOff size={16} />}
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteModal({
+                            isOpen: true,
+                            type: 'account',
+                            id: acc.id,
+                            name: acc.name
+                          });
+                        }}
+                        className="p-1.5 text-rose-500/30 hover:text-rose-500 transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  )}
                   <button onClick={() => toggleAccount(acc.id)} className="flex-1 grid grid-cols-2 md:grid-cols-5 items-center text-left gap-4 hover:bg-zinc-800/10 transition-colors">
                     <div className="flex items-center gap-4">
                       <ChevronRight size={18} className={`text-zinc-500 transition-transform ${isExp ? 'rotate-90' : ''}`} />
                       <span className="text-xl font-black text-white italic uppercase truncate">{acc.name}</span>
                     </div>
                     <div className="text-left md:text-center">
-                      <span className="block text-[10px] font-bold text-zinc-600 tracking-widest uppercase mb-1.5">ORAN</span>
                       <span className="text-xl font-black text-blue-400 font-mono tracking-tighter">%{s.ratio.toFixed(1)}</span>
                     </div>
                     <div className="text-left md:text-center">
-                      <span className="block text-[10px] font-bold text-zinc-600 tracking-widest uppercase mb-1.5">GÜNLÜK</span>
-                      <span className={`text-xl font-black font-mono tracking-tighter ${s.dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{formatCurrency(s.dailyGain)}</span>
+                      <span className={`text-xl font-black font-mono tracking-tighter ${s.dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                        {formatCurrency(s.dailyGain)}
+                        <span className="text-lg ml-2 opacity-80">
+                          (%{(((s.dailyGain) / (s.balance - s.dailyGain || 1)) * 100).toFixed(1)})
+                        </span>
+                      </span>
                     </div>
                     <div className="text-left md:text-center">
-                      <span className="block text-[10px] font-bold text-zinc-600 tracking-widest uppercase mb-1.5">TOPLAM</span>
-                      <span className={`text-xl font-black font-mono tracking-tighter ${s.totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{formatCurrency(s.totalGain)}</span>
+                      <span className={`text-xl font-black font-mono tracking-tighter ${s.totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                        {formatCurrency(s.totalGain)}
+                        <span className="text-lg ml-2 opacity-80">
+                          (%{(((s.totalGain) / (s.balance - s.totalGain || 1)) * 100).toFixed(1)})
+                        </span>
+                      </span>
                     </div>
                     <div className="text-right">
-                      <span className="block text-[10px] font-bold text-zinc-600 tracking-widest uppercase mb-1.5">DEĞER</span>
                       <span className="text-2xl font-black text-white tracking-tighter">{formatCurrency(s.balance)}</span>
                     </div>
                   </button>
@@ -249,19 +257,25 @@ const PortfolioOverview = () => {
                     <span className="text-2xl font-black text-white italic uppercase truncate">{trNames[type] || type}</span>
                   </div>
                   <div className="text-left md:text-center">
-                    <span className="block text-[10px] font-bold text-zinc-600 tracking-widest uppercase mb-1.5">ORAN</span>
                     <span className="text-xl font-black text-blue-400 font-mono tracking-tighter">%{s.ratio.toFixed(1)}</span>
                   </div>
                   <div className="text-left md:text-center">
-                    <span className="block text-[10px] font-bold text-zinc-600 tracking-widest uppercase mb-1.5">GÜNLÜK</span>
-                    <span className={`text-xl font-black font-mono tracking-tighter ${s.dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{formatCurrency(s.dailyGain)}</span>
+                    <span className={`text-xl font-black font-mono tracking-tighter ${s.dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      {formatCurrency(s.dailyGain)}
+                      <span className="text-[10px] ml-1 opacity-60">
+                        (%{(((s.dailyGain) / (s.balance - s.dailyGain || 1)) * 100).toFixed(1)})
+                      </span>
+                    </span>
                   </div>
                   <div className="text-left md:text-center">
-                    <span className="block text-[10px] font-bold text-zinc-600 tracking-widest uppercase mb-1.5">TOPLAM</span>
-                    <span className={`text-xl font-black font-mono tracking-tighter ${s.totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{formatCurrency(s.totalGain)}</span>
+                    <span className={`text-xl font-black font-mono tracking-tighter ${s.totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      {formatCurrency(s.totalGain)}
+                      <span className="text-[10px] ml-1 opacity-60">
+                        (%{(((s.totalGain) / (s.balance - s.totalGain || 1)) * 100).toFixed(1)})
+                      </span>
+                    </span>
                   </div>
                   <div className="text-right">
-                    <span className="block text-[10px] font-bold text-zinc-600 tracking-widest uppercase mb-1.5">DEĞER</span>
                     <span className="text-2xl font-black text-white tracking-tighter">{formatCurrency(s.balance)}</span>
                   </div>
                 </button>
