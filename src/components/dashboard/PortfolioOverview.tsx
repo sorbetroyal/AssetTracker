@@ -21,15 +21,23 @@ const PortfolioOverview = () => {
 
   const toggleAccount = (accountId: string) => {
     const newExpanded = new Set(expandedAccounts);
-    if (newExpanded.has(accountId)) newExpanded.delete(accountId);
-    else newExpanded.add(accountId);
+    if (newExpanded.has(accountId)) {
+      newExpanded.delete(accountId);
+    } else {
+      newExpanded.clear(); // Diğerlerini kapat
+      newExpanded.add(accountId);
+    }
     setExpandedAccounts(newExpanded);
   };
 
   const toggleType = (type: string) => {
     const newExpanded = new Set(expandedTypes);
-    if (newExpanded.has(type)) newExpanded.delete(type);
-    else newExpanded.add(type);
+    if (newExpanded.has(type)) {
+      newExpanded.delete(type);
+    } else {
+      newExpanded.clear(); // Diğerlerini kapat
+      newExpanded.add(type);
+    }
     setExpandedTypes(newExpanded);
   };
 
@@ -139,175 +147,195 @@ const PortfolioOverview = () => {
       <PortfolioStats {...stats} />
 
       {/* HESAPLAR */}
-      <div className="space-y-6">
-        <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] px-4">Hesaplar</h2>
-        <div className="space-y-4">
-          {[...accounts]
-            .sort((a, b) => {
-              const isIncA = a.isIncluded !== false;
-              const isIncB = b.isIncluded !== false;
-              if (isIncA && !isIncB) return -1;
-              if (!isIncA && isIncB) return 1;
-              return (stats.accountStats[b.id]?.balance || 0) - (stats.accountStats[a.id]?.balance || 0);
-            })
-            .map((acc, index) => {
-            const s = stats.accountStats[acc.id];
-            const isExp = expandedAccounts.has(acc.id);
-            const isInc = acc.isIncluded !== false;
-            const isAlternate = index % 2 === 1;
-            return (
-              <div key={acc.id} className={`${isAlternate ? 'bg-zinc-900/40' : 'bg-zinc-900'} border border-zinc-800 rounded-[2rem] overflow-hidden transition-all duration-300 ${!isInc ? 'opacity-40 grayscale' : ''}`}>
-                <div className="w-full flex items-center p-7 gap-4">
-                  {isExp && (
-                    <div className="flex flex-col items-center gap-0.5 min-w-[32px] animate-in fade-in duration-300">
-                      <button onClick={() => toggleAccountInclusion(acc.id, !isInc)} className={`p-1.5 transition-colors ${isInc ? 'text-zinc-500 hover:text-blue-500' : 'text-zinc-700 hover:text-zinc-400'}`}>
-                        {isInc ? <Eye size={16} /> : <EyeOff size={16} />}
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteModal({
-                            isOpen: true,
-                            type: 'account',
-                            id: acc.id,
-                            name: acc.name
-                          });
-                        }}
-                        className="p-1.5 text-rose-500/30 hover:text-rose-500 transition-colors"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  )}
-                  <button onClick={() => toggleAccount(acc.id)} className="flex-1 grid grid-cols-2 md:grid-cols-5 items-center text-left gap-4 hover:bg-zinc-800/10 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <ChevronRight size={18} className={`text-zinc-500 transition-transform ${isExp ? 'rotate-90' : ''}`} />
-                      <span className="text-xl font-black text-white italic uppercase truncate">{acc.name}</span>
-                    </div>
-                    <div className="text-left md:text-center">
-                      <span className="text-xl font-black text-blue-400 font-mono tracking-tighter">%{s.ratio.toFixed(1)}</span>
-                    </div>
-                    <div className="text-left md:text-center">
-                      <span className={`text-xl font-black font-mono tracking-tighter ${s.dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                        {formatCurrency(s.dailyGain)}
-                        <span className="text-lg ml-2 opacity-80">
-                          (%{(((s.dailyGain) / (s.balance - s.dailyGain || 1)) * 100).toFixed(1)})
-                        </span>
-                      </span>
-                    </div>
-                    <div className="text-left md:text-center">
-                      <span className={`text-xl font-black font-mono tracking-tighter ${s.totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                        {formatCurrency(s.totalGain)}
-                        <span className="text-lg ml-2 opacity-80">
-                          (%{(((s.totalGain) / (s.balance - s.totalGain || 1)) * 100).toFixed(1)})
-                        </span>
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-2xl font-black text-white tracking-tighter">{formatCurrency(s.balance)}</span>
-                    </div>
-                  </button>
-                </div>
-                {isExp && (
-                  <div className="px-8 pb-8 animate-in slide-in-from-top-4 duration-300">
-                    <div className="pt-8 border-t border-zinc-800 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {stats.detailedAll.filter(h => h.accountId === acc.id).map((asset: any, idx: number) => {
-                        const accStats = stats.accountStats[acc.id];
-                        const groupRatio = accStats.balance > 0 ? (asset.cValTRY / accStats.balance) * 100 : 0;
-                        return (
-                          <AssetDetailCard 
-                            key={asset.id} 
-                            asset={asset} 
-                            rates={rates} 
-                            isAlternate={idx % 2 === 1}
-                            groupRatio={groupRatio}
-                            onRemove={(id) => setDeleteModal({
-                              isOpen: true,
-                              type: 'asset',
-                              id,
-                              name: asset.symbol.replace('.IS', '')
-                            })} 
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {expandedTypes.size === 0 && (
+        <div className="space-y-6">
+          <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] px-4">Hesaplar</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...accounts]
+              .sort((a, b) => {
+                const isIncA = a.isIncluded !== false;
+                const isIncB = b.isIncluded !== false;
+                if (isIncA && !isIncB) return -1;
+                if (!isIncA && isIncB) return 1;
+                return (stats.accountStats[b.id]?.balance || 0) - (stats.accountStats[a.id]?.balance || 0);
+              })
+              .filter(acc => expandedAccounts.size === 0 || expandedAccounts.has(acc.id))
+              .map((acc, index) => {
+                const s = stats.accountStats[acc.id];
+                if (!s) return null;
+                const isExp = expandedAccounts.has(acc.id);
+                const isInc = acc.isIncluded !== false;
+                const isAlternate = index % 2 === 1;
 
-      {/* VARLIKLAR */}
-      <div className="space-y-6">
-        <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] px-4">Varlık Dağılımı</h2>
-        <div className="space-y-4">
-          {Object.entries(stats.typeStats)
-            .sort(([, a], [, b]) => b.balance - a.balance)
-            .map(([type, s], index) => {
-            const isExp = expandedTypes.has(type);
-            const isAlternate = index % 2 === 1;
-            const trNames:any = { 'FOREIGN_CURRENCY':'DÖVİZ','CRYPTO':'KRİPTO','US':'ABD HİSSE','BIST':'BIST','FUND':'FON','COMMODITY':'EMTİA','BEFAS':'BEFAS' };
-            return (
-              <div key={type} className={`${isAlternate ? 'bg-zinc-900/40' : 'bg-zinc-900'} border border-zinc-800 rounded-[2rem] overflow-hidden transition-colors`}>
-                <button onClick={() => toggleType(type)} className="w-full grid grid-cols-2 md:grid-cols-5 items-center p-7 text-left gap-4 hover:bg-zinc-800/30 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <ChevronRight size={18} className={`text-zinc-500 transition-transform ${isExp ? 'rotate-90' : ''}`} />
-                    <span className="text-2xl font-black text-white italic uppercase truncate">{trNames[type] || type}</span>
-                  </div>
-                  <div className="text-left md:text-center">
-                    <span className="text-xl font-black text-blue-400 font-mono tracking-tighter">%{s.ratio.toFixed(1)}</span>
-                  </div>
-                  <div className="text-left md:text-center">
-                    <span className={`text-xl font-black font-mono tracking-tighter ${s.dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      {formatCurrency(s.dailyGain)}
-                      <span className="text-[10px] ml-1 opacity-60">
-                        (%{(((s.dailyGain) / (s.balance - s.dailyGain || 1)) * 100).toFixed(1)})
-                      </span>
-                    </span>
-                  </div>
-                  <div className="text-left md:text-center">
-                    <span className={`text-xl font-black font-mono tracking-tighter ${s.totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      {formatCurrency(s.totalGain)}
-                      <span className="text-[10px] ml-1 opacity-60">
-                        (%{(((s.totalGain) / (s.balance - s.totalGain || 1)) * 100).toFixed(1)})
-                      </span>
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-2xl font-black text-white tracking-tighter">{formatCurrency(s.balance)}</span>
-                  </div>
-                </button>
-                {isExp && (
-                  <div className="px-8 pb-8 animate-in slide-in-from-top-4 duration-300">
-                    <div className="pt-8 border-t border-zinc-800 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {s.items.map((asset:any, idx:number) => {
-                        const groupRatio = s.balance > 0 ? (asset.cValTRY / s.balance) * 100 : 0;
-                        return (
-                          <AssetDetailCard 
-                            key={asset.id} 
-                            asset={asset} 
-                            rates={rates} 
-                            isAlternate={idx % 2 === 1}
-                            groupRatio={groupRatio}
-                            onRemove={(id) => setDeleteModal({
-                              isOpen: true,
-                              type: 'asset',
-                              id,
-                              name: asset.symbol.replace('.IS', '')
-                            })} 
-                          />
-                        );
-                      })}
+                return (
+                  <div key={acc.id} className="contents">
+                    {/* ... rest of account card ... */}
+                <div className={`${isExp ? 'bg-zinc-900 border-2 border-blue-500 shadow-[0_0_50px_rgba(59,130,246,0.3)] scale-[1.02]' : isAlternate ? 'bg-zinc-900/50 border-zinc-800' : 'bg-zinc-950 border-zinc-800'} border rounded-[2.5rem] p-6 transition-all duration-500 hover:border-zinc-700 group relative flex flex-col gap-5 ${!isInc ? 'opacity-40 grayscale' : ''}`}>
+                      {/* HEADER */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex flex-col gap-1.5">
+                          <span className={`text-2xl font-black italic uppercase tracking-tighter leading-none truncate max-w-[150px] pr-2 transition-colors duration-300 ${isExp ? 'text-blue-400' : 'text-white'}`}>{acc.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-black text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/10 w-fit">
+                              %{s.ratio.toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+                        {isExp && (
+                          <div className="flex items-center gap-2 pointer-events-auto animate-in fade-in duration-300">
+                            <button onClick={() => toggleAccountInclusion(acc.id, !isInc)} className="p-2 text-zinc-600 hover:text-blue-500 transition-colors">
+                              {isInc ? <Eye size={18} /> : <EyeOff size={18} />}
+                            </button>
+                            <button 
+                              onClick={() => setDeleteModal({ isOpen: true, type: 'account', id: acc.id, name: acc.name })}
+                              className="p-2 text-rose-500/30 hover:text-rose-500 transition-colors"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* STATS */}
+                      <div className="space-y-1.5 cursor-pointer flex-1" onClick={() => toggleAccount(acc.id)}>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xl font-black tracking-tighter ${s.dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {formatCurrency(s.dailyGain)}
+                          </span>
+                          <span className={`text-sm font-black px-1.5 py-0.5 rounded ${s.dailyGain >= 0 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
+                            %{(((s.dailyGain) / (s.balance - s.dailyGain || 1)) * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xl font-black tracking-tighter ${s.totalGain >= 0 ? 'text-emerald-500/70' : 'text-rose-500/70'}`}>
+                            {formatCurrency(s.totalGain)}
+                          </span>
+                          <span className={`text-sm font-black px-1.5 py-0.5 rounded ${s.totalGain >= 0 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
+                            %{(((s.totalGain) / (s.balance - s.totalGain || 1)) * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* BALANCE */}
+                      <div className="pt-4 border-t border-zinc-900 cursor-pointer" onClick={() => toggleAccount(acc.id)}>
+                        <span className="text-3xl font-black text-white tracking-tighter leading-none">{formatCurrency(s.balance)}</span>
+                      </div>
+
+                      <button onClick={() => toggleAccount(acc.id)} className="absolute bottom-5 right-6 text-zinc-800 hover:text-zinc-400">
+                        <ChevronRight className={`transition-transform duration-300 ${isExp ? 'rotate-90' : ''}`} size={24} />
+                      </button>
                     </div>
+
+                    {isExp && (
+                      <div className="col-span-full py-4 animate-in slide-in-from-top-4 duration-300">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4 border-t border-zinc-900/30">
+                          {stats.detailedAll.filter(h => h.accountId === acc.id).map((asset: any, idx: number) => {
+                            const accStats = stats.accountStats[acc.id];
+                            const groupRatio = accStats.balance > 0 ? (asset.cValTRY / accStats.balance) * 100 : 0;
+                            return (
+                              <AssetDetailCard 
+                                key={asset.id} 
+                                asset={asset} 
+                                rates={rates} 
+                                isAlternate={idx % 2 === 1}
+                                groupRatio={groupRatio}
+                                onRemove={(id) => setDeleteModal({ isOpen: true, type: 'asset', id, name: asset.symbol.replace('.IS', '') })} 
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })}
+                );
+              })}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* VARLIK DAĞILIMI */}
+      {expandedAccounts.size === 0 && (
+        <div className="space-y-6">
+          <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] px-4">Varlık Dağılımı</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Object.entries(stats.typeStats)
+              .sort(([, a], [, b]) => b.balance - a.balance)
+              .filter(([type]) => expandedTypes.size === 0 || expandedTypes.has(type))
+              .map(([type, s], index) => {
+                const isExp = expandedTypes.has(type);
+                const isAlternate = index % 2 === 1;
+                const trNames:any = { 'FOREIGN_CURRENCY':'DÖVİZ','CRYPTO':'KRİPTO','US':'ABD HİSSE','BIST':'BIST','FUND':'FON','COMMODITY':'EMTİA','BEFAS':'BEFAS' };
+                
+                return (
+                  <div key={type} className="contents">
+                  <div className={`${isExp ? 'bg-zinc-900 border-2 border-blue-500 shadow-[0_0_50px_rgba(59,130,246,0.3)] scale-[1.02]' : isAlternate ? 'bg-zinc-900/50 border-zinc-800' : 'bg-zinc-950 border-zinc-800'} border rounded-[2.5rem] p-6 transition-all duration-500 hover:border-zinc-700 group relative flex flex-col gap-5`}>
+                      {/* HEADER */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex flex-col gap-1.5">
+                          <span className={`text-2xl font-black italic uppercase tracking-tighter leading-none pr-2 transition-colors duration-300 ${isExp ? 'text-blue-400' : 'text-white'}`}>{trNames[type] || type}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-black text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/10 w-fit">
+                              %{s.ratio.toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* STATS */}
+                      <div className="space-y-1.5 cursor-pointer flex-1" onClick={() => toggleType(type)}>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xl font-black tracking-tighter ${s.dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {formatCurrency(s.dailyGain)}
+                          </span>
+                          <span className={`text-sm font-black px-1.5 py-0.5 rounded ${s.dailyGain >= 0 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
+                            %{(((s.dailyGain) / (s.balance - s.dailyGain || 1)) * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xl font-black tracking-tighter ${s.totalGain >= 0 ? 'text-emerald-500/70' : 'text-rose-500/70'}`}>
+                            {formatCurrency(s.totalGain)}
+                          </span>
+                          <span className={`text-sm font-black px-1.5 py-0.5 rounded ${s.totalGain >= 0 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
+                            %{(((s.totalGain) / (s.balance - s.totalGain || 1)) * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* BALANCE */}
+                      <div className="pt-4 border-t border-zinc-900 cursor-pointer" onClick={() => toggleType(type)}>
+                        <span className="text-3xl font-black text-white tracking-tighter leading-none">{formatCurrency(s.balance)}</span>
+                      </div>
+
+                      <button onClick={() => toggleType(type)} className="absolute bottom-5 right-6 text-zinc-800 hover:text-zinc-400">
+                        <ChevronRight className={`transition-transform duration-300 ${isExp ? 'rotate-90' : ''}`} size={24} />
+                      </button>
+                    </div>
+
+                    {isExp && (
+                      <div className="col-span-full py-4 animate-in slide-in-from-top-4 duration-300">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4 border-t border-zinc-900/30">
+                          {s.items.map((asset:any, idx:number) => {
+                            const groupRatio = s.balance > 0 ? (asset.cValTRY / s.balance) * 100 : 0;
+                            return (
+                              <AssetDetailCard 
+                                key={asset.id} 
+                                asset={asset} 
+                                rates={rates} 
+                                isAlternate={idx % 2 === 1}
+                                groupRatio={groupRatio}
+                                onRemove={(id) => setDeleteModal({ isOpen: true, type: 'asset', id, name: asset.symbol.replace('.IS', '') })} 
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
 
       <ConfirmationModal
         isOpen={deleteModal.isOpen}

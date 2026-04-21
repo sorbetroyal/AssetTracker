@@ -22,8 +22,8 @@ export const AssetDetailCard: React.FC<AssetDetailCardProps> = ({ asset, rates, 
         {/* ROW 1: VARLIK ADI, ORAN, ADET, SILME */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-2xl font-black text-white italic uppercase tracking-tighter leading-none">
-              {asset.symbol.replace('.IS', '')}
+            <span className="text-2xl font-black text-white italic uppercase tracking-tighter leading-none pr-2">
+              {asset.symbol === 'USDTRY=X' ? 'DOLAR' : asset.symbol.replace('.IS', '').replace('-USD', '')}
             </span>
             {groupRatio !== undefined && (
               <span className="text-sm font-black text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/10">
