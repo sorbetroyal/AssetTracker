@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { AssetTable } from '@/components/dashboard/AssetTable';
-import { PortfolioOverview } from '@/components/dashboard/PortfolioOverview';
+import PortfolioOverview from '@/components/dashboard/PortfolioOverview';
 import { usePriceData } from '@/hooks/usePriceData';
 import { useAssetStore } from '@/store/useAssetStore';
 import { useState } from 'react';

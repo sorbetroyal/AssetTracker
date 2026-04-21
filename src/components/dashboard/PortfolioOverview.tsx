@@ -21,15 +21,16 @@ import {
   Clock
 } from 'lucide-react';
 import { useAssetStore, Account, Asset } from '@/store/useAssetStore';
-import { formatCurrency, formatPercent } from '@/utils/formatters';
+import { formatCurrency, formatPercent } from '../../lib/formatters';
 
 export default function PortfolioOverview() {
   const { 
     accounts, 
     assets, 
-    toggleAccountVisibility, 
-    deleteAccount, 
-    deleteAsset,
+    portfolioHoldings,
+    toggleAccountInclusion, 
+    removeAccount, 
+    removeAsset,
     triggerRefresh,
     syncFunds,
     isLoading 
@@ -65,30 +66,49 @@ export default function PortfolioOverview() {
 
   // Portfolio aggregates
   const stats = useMemo(() => {
-    const visibleAccounts = accounts.filter(acc => acc.isVisible);
-    const visibleAssets = assets.filter(asset => {
-      const account = accounts.find(acc => acc.id === asset.accountId);
-      return account?.isVisible;
-    });
-
-    const totalBalance = visibleAccounts.reduce((sum, acc) => sum + acc.currentBalance, 0);
-    const dailyGain = visibleAccounts.reduce((sum, acc) => sum + acc.dailyGain, 0);
-    const totalGain = visibleAccounts.reduce((sum, acc) => sum + acc.totalGain, 0);
+    const visibleAccounts = accounts.filter(acc => acc.isIncluded);
     
-    // Average gain percentages
-    const dailyGainPercent = totalBalance > 0 ? (dailyGain / (totalBalance - dailyGain)) * 100 : 0;
-    const totalGainPercent = totalBalance > 0 ? (totalGain / (totalBalance - totalGain)) * 100 : 0;
+    // Her hesap için ayrı istatistik hesapla
+    const accountStats = accounts.reduce((acc, account) => {
+      const holdings = portfolioHoldings.filter(h => h.accountId === account.id);
+      const balance = holdings.reduce((sum, h) => sum + (h.amount * (h.currentPrice || h.purchasePrice)), 0);
+      const purchaseValue = holdings.reduce((sum, h) => sum + (h.amount * h.purchasePrice), 0);
+      const totalGain = balance - purchaseValue;
+      const dailyGain = holdings.reduce((sum, h) => {
+        const price = h.currentPrice || h.purchasePrice;
+        const change = h.dailyChange || 0;
+        return sum + (h.amount * price * (change / 100));
+      }, 0);
+
+      acc[account.id] = {
+        balance,
+        dailyGain,
+        dailyGainPercent: balance > 0 ? (dailyGain / balance) * 100 : 0,
+        totalGain,
+        totalGainPercent: purchaseValue > 0 ? (totalGain / purchaseValue) * 100 : 0,
+        assetCount: holdings.length
+      };
+      return acc;
+    }, {} as Record<string, any>);
+
+    const totalBalance = visibleAccounts.reduce((sum, acc) => sum + (accountStats[acc.id]?.balance || 0), 0);
+    const dailyGain = visibleAccounts.reduce((sum, acc) => sum + (accountStats[acc.id]?.dailyGain || 0), 0);
+    const totalGain = visibleAccounts.reduce((sum, acc) => sum + (accountStats[acc.id]?.totalGain || 0), 0);
+    
+    const dailyGainPercent = totalBalance > 0 ? (dailyGain / totalBalance) * 100 : 0;
+    const totalGainPercent = (totalBalance - totalGain) > 0 ? (totalGain / (totalBalance - totalGain)) * 100 : 0;
 
     return {
+      accountStats,
       totalBalance,
       dailyGain,
       dailyGainPercent,
       totalGain,
       totalGainPercent,
-      assetCount: visibleAssets.length,
+      assetCount: portfolioHoldings.length,
       accountCount: visibleAccounts.length
     };
-  }, [accounts, assets]);
+  }, [accounts, portfolioHoldings]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -188,110 +208,111 @@ export default function PortfolioOverview() {
           </div>
 
           <div className="grid gap-4">
-            {accounts.map(account => (
-              <div 
-                key={account.id}
-                className={`group relative bg-zinc-900 border transition-all duration-500 rounded-[2rem] overflow-hidden ${
-                  account.isVisible ? 'border-zinc-800' : 'border-zinc-900 opacity-60'
-                }`}
-              >
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-2xl font-bold text-white tracking-tight uppercase group-hover:text-emerald-500 transition-colors">
-                          {account.name}
-                        </h3>
-                        <div className="flex gap-2">
-                          <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-400 text-[10px] font-bold uppercase tracking-wider">
-                            {assets.filter(a => a.accountId === account.id).length} VRLK
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] font-bold">
-                            %{((account.currentBalance / stats.totalBalance) * 100).toFixed(1)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={() => toggleAccount(account.id)}
-                      className="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500"
-                    >
-                      {expandedAccounts[account.id] ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                    </button>
-                  </div>
-
-                  <div className="flex justify-between items-center mb-6">
-                    <div className="flex flex-col">
-                      <span className="text-zinc-500 text-xs font-medium mb-1 tracking-wider uppercase">GÜNLÜK</span>
-                      <div className="flex items-center gap-1.5">
-                        <span className={`text-sm font-bold ${account.dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                          {account.dailyGain >= 0 ? '+' : ''}{formatCurrency(account.dailyGain)}
-                        </span>
-                        <span className={`text-xs ${account.dailyGain >= 0 ? 'text-emerald-500/80' : 'text-rose-500/80'}`}>
-                          ({account.dailyGainPercent >= 0 ? '+' : ''}{account.dailyGainPercent.toFixed(1)}%)
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <span className="text-zinc-500 text-xs font-medium mb-1 tracking-wider uppercase">TOPLAM KAZANÇ</span>
-                      <div className="flex items-center gap-1.5">
-                        <span className={`text-sm font-bold ${account.totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                          {account.totalGain >= 0 ? '+' : ''}{formatCurrency(account.totalGain)}
-                        </span>
-                        <span className={`text-xs ${account.totalGain >= 0 ? 'text-emerald-500/80' : 'text-rose-500/80'}`}>
-                          ({account.totalGainPercent >= 0 ? '+' : ''}{account.totalGainPercent.toFixed(1)}%)
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Account Actions & Balance Row Combined */}
-                  <div className="flex justify-between items-end mt-4">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => toggleAccountVisibility(account.id)}
-                        className={`p-2 rounded-xl transition-all duration-300 ${
-                          account.isVisible 
-                            ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
-                            : 'bg-zinc-900/50 text-zinc-500 border border-zinc-800'
-                        }`}
-                      >
-                        {account.isVisible ? <Eye size={18} /> : <EyeOff size={18} />}
-                      </button>
-                      <button
-                        onClick={() => deleteAccount(account.id)}
-                        className="p-2 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 transition-all duration-300 hover:bg-rose-500/20"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                    <div className="text-3xl font-bold text-white tracking-tighter">
-                      {formatCurrency(account.currentBalance)}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Expanded Assets */}
-                {expandedAccounts[account.id] && (
-                  <div className="border-t border-zinc-800/50 bg-zinc-900/50 p-4 space-y-3">
-                    {assets.filter(a => a.accountId === account.id).map(asset => (
-                      <div key={asset.id} className="bg-zinc-800/30 rounded-2xl p-4 border border-zinc-800/50 hover:bg-zinc-800/50 transition-colors">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            <div className="bg-zinc-800 rounded-lg p-2 text-xs font-black text-white px-3">
-                              {asset.symbol}
-                            </div>
-                            <div className="text-xs text-zinc-400 font-medium">
-                              {asset.quantity.toLocaleString('tr-TR')} ADET
-                            </div>
+            {accounts.map(account => {
+              const accountStat = stats.accountStats[account.id];
+              return (
+                <div 
+                  key={account.id}
+                  className={`group relative bg-zinc-900 border transition-all duration-500 rounded-[2rem] overflow-hidden ${
+                    account.isIncluded ? 'border-zinc-800' : 'border-zinc-900 opacity-60'
+                  }`}
+                >
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-3">
+                          <h3 className="text-2xl font-bold text-white tracking-tight uppercase group-hover:text-emerald-500 transition-colors">
+                            {account.name}
+                          </h3>
+                          <div className="flex gap-2">
+                            <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-400 text-[10px] font-bold uppercase tracking-wider">
+                              {accountStat?.assetCount || 0} VRLK
+                            </span>
+                            <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] font-bold">
+                              %{stats.totalBalance > 0 ? (((accountStat?.balance || 0) / stats.totalBalance) * 100).toFixed(1) : '0.0'}
+                            </span>
                           </div>
-                          <button 
-                            onClick={() => deleteAsset(asset.id)}
-                            className="p-1.5 text-zinc-600 hover:text-rose-500 transition-colors"
-                          >
-                            <Trash2 size={14} />
-                          </button>
                         </div>
+                      </div>
+                      <button 
+                        onClick={() => toggleAccount(account.id)}
+                        className="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500"
+                      >
+                        {expandedAccounts[account.id] ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                      </button>
+                    </div>
+
+                    <div className="flex justify-between items-center mb-6">
+                      <div className="flex flex-col">
+                        <span className="text-zinc-500 text-xs font-medium mb-1 tracking-wider uppercase">GÜNLÜK</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-sm font-bold ${(accountStat?.dailyGain || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {(accountStat?.dailyGain || 0) >= 0 ? '+' : ''}{formatCurrency(accountStat?.dailyGain || 0)}
+                          </span>
+                          <span className={`text-xs ${(accountStat?.dailyGain || 0) >= 0 ? 'text-emerald-500/80' : 'text-rose-500/80'}`}>
+                            ({(accountStat?.dailyGainPercent || 0) >= 0 ? '+' : ''}{(accountStat?.dailyGainPercent || 0).toFixed(1)}%)
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-zinc-500 text-xs font-medium mb-1 tracking-wider uppercase">TOPLAM KAZANÇ</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-sm font-bold ${(accountStat?.totalGain || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {(accountStat?.totalGain || 0) >= 0 ? '+' : ''}{formatCurrency(accountStat?.totalGain || 0)}
+                          </span>
+                          <span className={`text-xs ${(accountStat?.totalGain || 0) >= 0 ? 'text-emerald-500/80' : 'text-rose-500/80'}`}>
+                            ({(accountStat?.totalGainPercent || 0) >= 0 ? '+' : ''}{(accountStat?.totalGainPercent || 0).toFixed(1)}%)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-end mt-4">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => toggleAccountInclusion(account.id, !account.isIncluded)}
+                          className={`p-2 rounded-xl transition-all duration-300 ${
+                            account.isIncluded 
+                              ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
+                              : 'bg-zinc-500/10 text-zinc-500 border border-zinc-500/20'
+                          }`}
+                        >
+                          {account.isIncluded ? <Eye size={18} /> : <EyeOff size={18} />}
+                        </button>
+                        <button
+                          onClick={() => removeAccount(account.id)}
+                          className="p-2 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 transition-all duration-300 hover:bg-rose-500/20"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                      <div className="text-3xl font-bold text-white tracking-tighter">
+                        {formatCurrency(accountStat?.balance || 0)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expanded Assets */}
+                  {expandedAccounts[account.id] && (
+                    <div className="border-t border-zinc-800/50 bg-zinc-900/50 p-4 space-y-3">
+                      {portfolioHoldings.filter(h => h.accountId === account.id).map(asset => (
+                        <div key={asset.id} className="bg-zinc-800/30 rounded-2xl p-4 border border-zinc-800/50 hover:bg-zinc-800/50 transition-colors">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="bg-zinc-800 rounded-lg p-2 text-xs font-black text-white px-3">
+                                {asset.symbol}
+                              </div>
+                              <div className="text-xs text-zinc-400 font-medium">
+                                {asset.amount.toLocaleString('tr-TR')} ADET
+                              </div>
+                            </div>
+                            <button 
+                              onClick={() => removeAsset(asset.id)}
+                              className="p-1.5 text-zinc-600 hover:text-rose-500 transition-colors"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         <div className="flex justify-between items-end">
                           <div className="flex flex-col">
                             <div className="text-xs text-zinc-500 uppercase tracking-widest font-bold mb-1">DEĞER</div>
@@ -323,66 +344,74 @@ export default function PortfolioOverview() {
           </h2>
 
           <div className="grid gap-4">
-            {assets.filter(asset => {
+            {portfolioHoldings.filter(asset => {
               const account = accounts.find(acc => acc.id === asset.accountId);
-              return account?.isVisible;
-            }).map((asset, index) => (
-              <div 
-                key={asset.id}
-                className="group bg-zinc-900 border border-zinc-800 rounded-[2rem] p-6 hover:border-emerald-500/20 transition-all duration-300"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl font-black text-white tracking-widest uppercase">
-                      {asset.symbol}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-wider">
-                      {asset.quantity.toLocaleString('tr-TR')} ADET
-                    </span>
-                    {asset.totalGainPercent > 0 && (
-                      <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] font-bold">
-                        %{asset.totalGainPercent.toFixed(1)}
-                      </span>
-                    )}
-                  </div>
-                </div>
+              return account?.isIncluded;
+            }).map((asset) => {
+              const currentValue = asset.amount * (asset.currentPrice || asset.purchasePrice);
+              const purchaseValue = asset.amount * asset.purchasePrice;
+              const totalGain = currentValue - purchaseValue;
+              const totalGainPercent = purchaseValue > 0 ? (totalGain / purchaseValue) * 100 : 0;
+              const dailyGain = asset.amount * (asset.currentPrice || asset.purchasePrice) * ((asset.dailyChange || 0) / 100);
 
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex flex-col">
-                    <div className="flex items-baseline gap-2 mb-1">
-                      <span className="text-xl font-medium text-white">
-                        {formatCurrency(asset.currentPrice)}
+              return (
+                <div 
+                  key={asset.id}
+                  className="group bg-zinc-900 border border-zinc-800 rounded-[2rem] p-6 hover:border-emerald-500/20 transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl font-black text-white tracking-widest uppercase">
+                        {asset.symbol}
                       </span>
-                      <div className="flex flex-col">
-                        <span className={`text-sm font-bold flex items-center ${asset.dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                          {asset.dailyGain >= 0 ? '+' : ''}{formatCurrency(asset.dailyGain)}
+                      <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-wider">
+                        {asset.amount.toLocaleString('tr-TR')} ADET
+                      </span>
+                      {totalGainPercent !== 0 && (
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${totalGainPercent > 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                          %{totalGainPercent.toFixed(1)}
                         </span>
-                        <span className={`text-[10px] ${asset.dailyGain >= 0 ? 'text-emerald-500/60' : 'text-rose-500/60'}`}>
-                          ({asset.dailyGainPercent >= 0 ? '+' : ''}{asset.dailyGainPercent.toFixed(1)}%)
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex flex-col">
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <span className="text-xl font-medium text-white">
+                          {formatCurrency(asset.currentPrice || asset.purchasePrice)}
                         </span>
+                        <div className="flex flex-col">
+                          <span className={`text-sm font-bold flex items-center ${dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {dailyGain >= 0 ? '+' : ''}{formatCurrency(dailyGain)}
+                          </span>
+                          <span className={`text-[10px] ${dailyGain >= 0 ? 'text-emerald-500/60' : 'text-rose-500/60'}`}>
+                            ({(asset.dailyChange || 0) >= 0 ? '+' : ''}{(asset.dailyChange || 0).toFixed(1)}%)
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <div className="flex items-baseline gap-2">
-                       <span className={`text-xl font-bold ${asset.totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                        {asset.totalGain >= 0 ? '+' : ''}{formatCurrency(asset.totalGain)}
+                    <div className="flex flex-col items-end">
+                      <div className="flex items-baseline gap-2">
+                         <span className={`text-xl font-bold ${totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                          {totalGain >= 0 ? '+' : ''}{formatCurrency(totalGain)}
+                        </span>
+                      </div>
+                      <span className={`text-[10px] ${totalGain >= 0 ? 'text-emerald-500/60' : 'text-rose-500/60'}`}>
+                        ({totalGainPercent >= 0 ? '+' : ''}{totalGainPercent.toFixed(1)}%)
                       </span>
                     </div>
-                    <span className={`text-[10px] ${asset.totalGain >= 0 ? 'text-emerald-500/60' : 'text-rose-500/60'}`}>
-                      ({asset.totalGainPercent >= 0 ? '+' : ''}{asset.totalGainPercent.toFixed(1)}%)
-                    </span>
                   </div>
-                </div>
 
-                {/* Main Total Row: Right Aligned */}
-                <div className="flex justify-end items-end pt-4 border-t border-zinc-800/50">
-                  <div className="text-3xl font-bold text-white tracking-tighter">
-                    {formatCurrency(asset.currentValue)}
+                  {/* Main Total Row: Right Aligned */}
+                  <div className="flex justify-end items-end pt-4 border-t border-zinc-800/50">
+                    <div className="text-3xl font-bold text-white tracking-tighter">
+                      {formatCurrency(currentValue)}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

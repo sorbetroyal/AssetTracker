@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 import { exec } from 'child_process';
 import path from 'path';
 
-export async function POST() {
+export async function POST(): Promise<NextResponse> {
   // Sadece lokal ortamda çalıştır (Güvenlik için)
   if (process.env.NODE_ENV !== 'development' && !process.env.ALLOW_REMOTE_SYNC) {
     return NextResponse.json({ error: 'Sync only allowed in development mode' }, { status: 403 });
   }
 
-  return new Promise((resolve) => {
+  return new Promise<NextResponse>((resolve) => {
     const scriptPath = path.join(process.cwd(), 'tefas-api', 'sync_job.py');
     
     console.log('[Sync API] Tetikleniyor:', scriptPath);
