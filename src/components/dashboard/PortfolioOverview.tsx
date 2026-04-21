@@ -21,7 +21,7 @@ import {
   Clock
 } from 'lucide-react';
 import { useAssetStore, Account, Asset } from '@/store/useAssetStore';
-import { formatCurrency, formatPercentage } from '@/utils/formatters';
+import { formatCurrency, formatPercent } from '@/utils/formatters';
 
 export default function PortfolioOverview() {
   const { 
@@ -302,7 +302,7 @@ export default function PortfolioOverview() {
                           <div className="flex flex-col items-end">
                             <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">DEĞİŞİM</div>
                             <div className={`text-sm font-bold ${asset.totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                              {asset.totalGain >= 0 ? '+' : ''}{formatPercentage(asset.totalGainPercent)}
+                              {asset.totalGain >= 0 ? '+' : ''}{formatPercent(asset.totalGainPercent)}
                             </div>
                           </div>
                         </div>
