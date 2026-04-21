@@ -295,44 +295,52 @@ export default function PortfolioOverview() {
                   {/* Expanded Assets */}
                   {expandedAccounts[account.id] && (
                     <div className="border-t border-zinc-800/50 bg-zinc-900/50 p-4 space-y-3">
-                      {portfolioHoldings.filter(h => h.accountId === account.id).map(asset => (
-                        <div key={asset.id} className="bg-zinc-800/30 rounded-2xl p-4 border border-zinc-800/50 hover:bg-zinc-800/50 transition-colors">
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              <div className="bg-zinc-800 rounded-lg p-2 text-xs font-black text-white px-3">
-                                {asset.symbol}
+                      {portfolioHoldings.filter(h => h.accountId === account.id).map(asset => {
+                        const currentValue = asset.amount * (asset.currentPrice || asset.purchasePrice);
+                        const purchaseValue = asset.amount * asset.purchasePrice;
+                        const totalGain = currentValue - purchaseValue;
+                        const totalGainPercent = purchaseValue > 0 ? (totalGain / purchaseValue) * 100 : 0;
+
+                        return (
+                          <div key={asset.id} className="bg-zinc-800/30 rounded-2xl p-4 border border-zinc-800/50 hover:bg-zinc-800/50 transition-colors">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-3">
+                                <div className="bg-zinc-800 rounded-lg p-2 text-xs font-black text-white px-3">
+                                  {asset.symbol}
+                                </div>
+                                <div className="text-xs text-zinc-400 font-medium">
+                                  {asset.amount.toLocaleString('tr-TR')} ADET
+                                </div>
                               </div>
-                              <div className="text-xs text-zinc-400 font-medium">
-                                {asset.amount.toLocaleString('tr-TR')} ADET
+                              <button 
+                                onClick={() => removeAsset(asset.id)}
+                                className="p-1.5 text-zinc-600 hover:text-rose-500 transition-colors"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                            <div className="flex justify-between items-end">
+                              <div className="flex flex-col">
+                                <div className="text-xs text-zinc-500 uppercase tracking-widest font-bold mb-1">DEĞER</div>
+                                <div className="text-xl font-bold text-white tracking-tight">
+                                  {formatCurrency(currentValue)}
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end">
+                                <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">DEĞİŞİM</div>
+                                <div className={`text-sm font-bold ${totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                  {totalGain >= 0 ? '+' : ''}{formatPercent(totalGainPercent)}
+                                </div>
                               </div>
                             </div>
-                            <button 
-                              onClick={() => removeAsset(asset.id)}
-                              className="p-1.5 text-zinc-600 hover:text-rose-500 transition-colors"
-                            >
-                              <Trash2 size={14} />
-                            </button>
                           </div>
-                        <div className="flex justify-between items-end">
-                          <div className="flex flex-col">
-                            <div className="text-xs text-zinc-500 uppercase tracking-widest font-bold mb-1">DEĞER</div>
-                            <div className="text-xl font-bold text-white tracking-tight">
-                              {formatCurrency(asset.currentValue)}
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end">
-                            <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">DEĞİŞİM</div>
-                            <div className={`text-sm font-bold ${asset.totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                              {asset.totalGain >= 0 ? '+' : ''}{formatPercent(asset.totalGainPercent)}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                        );
+                      })}
                   </div>
                 )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         </div>
 
