@@ -91,6 +91,37 @@ export default function PortfolioOverview() {
       return acc;
     }, {} as Record<string, any>);
 
+    // Varlıkları tiplerine göre grupla
+    const typeStats = portfolioHoldings.filter(h => {
+      const account = accounts.find(acc => acc.id === h.accountId);
+      return account?.isIncluded;
+    }).reduce((acc, h) => {
+      const type = h.assetType;
+      if (!acc[type]) {
+        acc[type] = { balance: 0, dailyGain: 0, totalGain: 0, items: [] };
+      }
+      
+      const price = h.currentPrice || h.purchasePrice;
+      const currentValue = h.amount * price;
+      const purchaseValue = h.amount * h.purchasePrice;
+      const totalGain = currentValue - purchaseValue;
+      const dailyGain = currentValue * ((h.dailyChange || 0) / 100);
+
+      acc[type].balance += currentValue;
+      acc[type].dailyGain += dailyGain;
+      acc[type].totalGain += totalGain;
+      acc[type].items.push({
+        ...h,
+        currentValue,
+        totalGain,
+        totalGainPercent: purchaseValue > 0 ? (totalGain / purchaseValue) * 100 : 0,
+        dailyGain,
+        dailyGainPercent: h.dailyChange || 0
+      });
+      
+      return acc;
+    }, {} as Record<string, { balance: number, dailyGain: number, totalGain: number, items: any[] }>);
+
     const totalBalance = visibleAccounts.reduce((sum, acc) => sum + (accountStats[acc.id]?.balance || 0), 0);
     const dailyGain = visibleAccounts.reduce((sum, acc) => sum + (accountStats[acc.id]?.dailyGain || 0), 0);
     const totalGain = visibleAccounts.reduce((sum, acc) => sum + (accountStats[acc.id]?.totalGain || 0), 0);
@@ -100,6 +131,7 @@ export default function PortfolioOverview() {
 
     return {
       accountStats,
+      typeStats,
       totalBalance,
       dailyGain,
       dailyGainPercent,
@@ -308,6 +340,9 @@ export default function PortfolioOverview() {
                                 <div className="bg-zinc-800 rounded-lg p-2 text-xs font-black text-white px-3">
                                   {asset.symbol}
                                 </div>
+                                <div className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-wider">
+                                  {asset.assetType}
+                                </div>
                                 <div className="text-xs text-zinc-400 font-medium">
                                   {asset.amount.toLocaleString('tr-TR')} ADET
                                 </div>
@@ -351,75 +386,89 @@ export default function PortfolioOverview() {
             Varlık Detayları
           </h2>
 
-          <div className="grid gap-4">
-            {portfolioHoldings.filter(asset => {
-              const account = accounts.find(acc => acc.id === asset.accountId);
-              return account?.isIncluded;
-            }).map((asset) => {
-              const currentValue = asset.amount * (asset.currentPrice || asset.purchasePrice);
-              const purchaseValue = asset.amount * asset.purchasePrice;
-              const totalGain = currentValue - purchaseValue;
-              const totalGainPercent = purchaseValue > 0 ? (totalGain / purchaseValue) * 100 : 0;
-              const dailyGain = asset.amount * (asset.currentPrice || asset.purchasePrice) * ((asset.dailyChange || 0) / 100);
+          <div className="space-y-8">
+            {Object.entries(stats.typeStats).map(([type, data]) => (
+              <div key={type} className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                  <h3 className="text-zinc-500 text-xs font-black tracking-[0.3em] uppercase flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${
+                      type === 'BIST' ? 'bg-emerald-500' :
+                      type === 'FON' || type === 'TEFAS' || type === 'BEFAS' ? 'bg-blue-500' :
+                      type === 'KRIPTO' || type === 'CRYPTO' ? 'bg-orange-500' : 'bg-zinc-500'
+                    }`} />
+                    {type === 'BIST' ? 'HİSSE SENETLERİ' :
+                     type === 'US' ? 'ABD BORSASI' :
+                     type === 'KRIPTO' || type === 'CRYPTO' ? 'KRİPTO VARLIKLAR' :
+                     type === 'TEFAS' || type === 'BEFAS' ? 'YATIRIM FONLARI' : type}
+                  </h3>
+                  <span className="text-white font-bold text-sm">
+                    {formatCurrency(data.balance)}
+                  </span>
+                </div>
 
-              return (
-                <div 
-                  key={asset.id}
-                  className="group bg-zinc-900 border border-zinc-800 rounded-[2rem] p-6 hover:border-emerald-500/20 transition-all duration-300"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl font-black text-white tracking-widest uppercase">
-                        {asset.symbol}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-wider">
-                        {asset.amount.toLocaleString('tr-TR')} ADET
-                      </span>
-                      {totalGainPercent !== 0 && (
-                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${totalGainPercent > 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
-                          %{totalGainPercent.toFixed(1)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="flex flex-col">
-                      <div className="flex items-baseline gap-2 mb-1">
-                        <span className="text-xl font-medium text-white">
-                          {formatCurrency(asset.currentPrice || asset.purchasePrice)}
-                        </span>
-                        <div className="flex flex-col">
-                          <span className={`text-sm font-bold flex items-center ${dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                            {dailyGain >= 0 ? '+' : ''}{formatCurrency(dailyGain)}
+                <div className="grid gap-4">
+                  {data.items.map((asset) => (
+                    <div 
+                      key={asset.id}
+                      className="group bg-zinc-900 border border-zinc-800 rounded-[2rem] p-6 hover:border-emerald-500/20 transition-all duration-300"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl font-black text-white tracking-widest uppercase">
+                            {asset.symbol}
                           </span>
-                          <span className={`text-[10px] ${dailyGain >= 0 ? 'text-emerald-500/60' : 'text-rose-500/60'}`}>
-                            ({(asset.dailyChange || 0) >= 0 ? '+' : ''}{(asset.dailyChange || 0).toFixed(1)}%)
+                          <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-400 text-[10px] font-bold uppercase tracking-wider">
+                            {asset.amount.toLocaleString('tr-TR')} ADET
+                          </span>
+                          {asset.totalGainPercent !== 0 && (
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${asset.totalGain >= 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                              %{asset.totalGainPercent.toFixed(1)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] font-bold text-zinc-600 bg-zinc-800/30 px-2 py-1 rounded-md uppercase tracking-widest">
+                          {asset.accountName || 'HESAP'}
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center mb-4">
+                        <div className="flex flex-col">
+                          <div className="flex items-baseline gap-2 mb-1">
+                            <span className="text-xl font-medium text-white">
+                              {formatCurrency(asset.currentPrice || asset.purchasePrice)}
+                            </span>
+                            <div className="flex flex-col">
+                              <span className={`text-sm font-bold flex items-center ${asset.dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                {asset.dailyGain >= 0 ? '+' : ''}{formatCurrency(asset.dailyGain)}
+                              </span>
+                              <span className={`text-[10px] ${asset.dailyGain >= 0 ? 'text-emerald-500/60' : 'text-rose-500/60'}`}>
+                                ({asset.dailyGainPercent >= 0 ? '+' : ''}{asset.dailyGainPercent.toFixed(1)}%)
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <div className="flex items-baseline gap-2">
+                             <span className={`text-xl font-bold ${asset.totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                              {asset.totalGain >= 0 ? '+' : ''}{formatCurrency(asset.totalGain)}
+                            </span>
+                          </div>
+                          <span className={`text-[10px] ${asset.totalGain >= 0 ? 'text-emerald-500/60' : 'text-rose-500/60'}`}>
+                            ({asset.totalGainPercent >= 0 ? '+' : ''}{asset.totalGainPercent.toFixed(1)}%)
                           </span>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <div className="flex items-baseline gap-2">
-                         <span className={`text-xl font-bold ${totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                          {totalGain >= 0 ? '+' : ''}{formatCurrency(totalGain)}
-                        </span>
-                      </div>
-                      <span className={`text-[10px] ${totalGain >= 0 ? 'text-emerald-500/60' : 'text-rose-500/60'}`}>
-                        ({totalGainPercent >= 0 ? '+' : ''}{totalGainPercent.toFixed(1)}%)
-                      </span>
-                    </div>
-                  </div>
 
-                  {/* Main Total Row: Right Aligned */}
-                  <div className="flex justify-end items-end pt-4 border-t border-zinc-800/50">
-                    <div className="text-3xl font-bold text-white tracking-tighter">
-                      {formatCurrency(currentValue)}
+                      <div className="flex justify-end items-end pt-4 border-t border-zinc-800/50">
+                        <div className="text-3xl font-bold text-white tracking-tighter">
+                          {formatCurrency(asset.currentValue)}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
       </div>
