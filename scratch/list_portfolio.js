@@ -8,10 +8,12 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 async function listPortfolio() {
   const { data, error } = await supabase
     .from('portfolio')
-    .select('symbol, asset_type')
+    .select('symbol, asset_type, currency')
   
   if (error) console.error(error)
-  else console.log(data)
+  else {
+      data.forEach(d => console.log(`${d.symbol}: ${d.asset_type} [${d.currency}]`));
+  }
 }
 
 listPortfolio()

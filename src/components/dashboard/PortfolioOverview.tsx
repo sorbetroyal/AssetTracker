@@ -1,477 +1,314 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Wallet, 
-  ArrowUpRight, 
-  ArrowDownRight,
-  Eye,
-  EyeOff,
-  Trash2,
-  AlertCircle,
-  Plus,
-  Search,
-  Filter,
-  ArrowRight,
-  ChevronDown,
-  ChevronUp,
-  RefreshCcw,
-  Clock
-} from 'lucide-react';
-import { useAssetStore, Account, Asset } from '@/store/useAssetStore';
-import { formatCurrency, formatPercent } from '../../lib/formatters';
+import React, { useMemo, useState } from 'react';
+import { useAssetStore } from '@/store/useAssetStore';
+import { formatCurrency } from '@/lib/formatters';
+import { ChevronRight, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { PortfolioStats } from './portfolio/PortfolioStats';
+import { AssetDetailCard } from './portfolio/AssetDetailCard';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
-export default function PortfolioOverview() {
-  const { 
-    accounts, 
-    assets, 
-    portfolioHoldings,
-    toggleAccountInclusion, 
-    removeAccount, 
-    removeAsset,
-    triggerRefresh,
-    syncFunds,
-    isLoading 
-  } = useAssetStore();
-  
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [expandedAccounts, setExpandedAccounts] = useState<Record<string, boolean>>({});
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Simüle edilmiş son güncelleme zamanı
-    setLastUpdated(new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }));
-  }, [assets]);
+const PortfolioOverview = () => {
+  const { portfolioHoldings, accounts, removeAsset, rates, toggleAccountInclusion, removeAccount, removePortfolioItem } = useAssetStore();
+  const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
+  const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set(['BIST']));
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; type: 'account' | 'asset'; id: string; name: string }>({
+    isOpen: false,
+    type: 'account',
+    id: '',
+    name: ''
+  });
 
   const toggleAccount = (accountId: string) => {
-    setExpandedAccounts(prev => ({
-      ...prev,
-      [accountId]: !prev[accountId]
-    }));
+    const newExpanded = new Set(expandedAccounts);
+    if (newExpanded.has(accountId)) newExpanded.delete(accountId);
+    else newExpanded.add(accountId);
+    setExpandedAccounts(newExpanded);
   };
 
-  const handleManualSync = async () => {
-    setIsUpdating(true);
-    try {
-      await syncFunds();
-      setLastUpdated(new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }));
-    } catch (error) {
-      console.error('Sync failed:', error);
-    } finally {
-      setIsUpdating(false);
-    }
+  const toggleType = (type: string) => {
+    const newExpanded = new Set(expandedTypes);
+    if (newExpanded.has(type)) newExpanded.delete(type);
+    else newExpanded.add(type);
+    setExpandedTypes(newExpanded);
   };
 
-  // Portfolio aggregates
   const stats = useMemo(() => {
-    const visibleAccounts = accounts.filter(acc => acc.isIncluded);
+    const isUSD = (currency: string) => currency.includes('$') || currency.toUpperCase() === 'USD';
     
-    // Her hesap için ayrı istatistik hesapla
-    const accountStats = accounts.reduce((acc, account) => {
-      const holdings = portfolioHoldings.filter(h => h.accountId === account.id);
-      const balance = holdings.reduce((sum, h) => sum + (h.amount * (h.currentPrice || h.purchasePrice)), 0);
-      const purchaseValue = holdings.reduce((sum, h) => sum + (h.amount * h.purchasePrice), 0);
-      const totalGain = balance - purchaseValue;
-      const dailyGain = holdings.reduce((sum, h) => {
-        const price = h.currentPrice || h.purchasePrice;
-        const change = h.dailyChange || 0;
-        return sum + (h.amount * price * (change / 100));
-      }, 0);
-
-      acc[account.id] = {
-        balance,
-        dailyGain,
-        dailyGainPercent: balance > 0 ? (dailyGain / balance) * 100 : 0,
-        totalGain,
-        totalGainPercent: purchaseValue > 0 ? (totalGain / purchaseValue) * 100 : 0,
-        assetCount: holdings.length
-      };
-      return acc;
-    }, {} as Record<string, any>);
-
-    // Varlıkları tiplerine göre grupla
-    const typeStats = portfolioHoldings.filter(h => {
-      const account = accounts.find(acc => acc.id === h.accountId);
-      return account?.isIncluded;
-    }).reduce((acc, h) => {
-      const type = h.assetType;
-      if (!acc[type]) {
-        acc[type] = { balance: 0, dailyGain: 0, totalGain: 0, items: [] };
-      }
-      
+    // Detaylı veri hazırlığı (TRY bazlı)
+    // Detaylı veri hazırlığı (Hem orijinal hem TRY bazlı)
+    const detailedAll = portfolioHoldings.map(h => {
       const price = h.currentPrice || h.purchasePrice;
+      const isU = isUSD(h.currency);
+      const rate = isU ? rates.USD : 1;
+      
       const currentValue = h.amount * price;
       const purchaseValue = h.amount * h.purchasePrice;
       const totalGain = currentValue - purchaseValue;
       const dailyGain = currentValue * ((h.dailyChange || 0) / 100);
+      
+      const cValTRY = currentValue * rate;
+      const pValTRY = purchaseValue * rate;
+      const dGainTRY = dailyGain * rate;
+      const totalGainTRY = cValTRY - pValTRY;
 
-      acc[type].balance += currentValue;
-      acc[type].dailyGain += dailyGain;
-      acc[type].totalGain += totalGain;
-      acc[type].items.push({
-        ...h,
+      return { 
+        ...h, 
         currentValue,
         totalGain,
-        totalGainPercent: purchaseValue > 0 ? (totalGain / purchaseValue) * 100 : 0,
         dailyGain,
+        cValTRY, 
+        pValTRY, 
+        dGainTRY, 
+        totalGainTRY,
+        totalGainPercent: pValTRY > 0 ? (totalGainTRY / pValTRY) * 100 : 0,
         dailyGainPercent: h.dailyChange || 0
-      });
+      };
+    });
+
+    const activeItems = detailedAll.filter(h => {
+      const acc = accounts.find(a => a.id === h.accountId);
+      return acc?.isIncluded !== false;
+    });
+
+    const totalBalance = activeItems.reduce((s, h) => s + h.cValTRY, 0);
+    const dailyGain = activeItems.reduce((s, h) => s + h.dGainTRY, 0);
+    const totalGain = activeItems.reduce((s, h) => s + h.totalGainTRY, 0);
+
+    const accountStats: Record<string, any> = {};
+    accounts.forEach(acc => {
+      const items = detailedAll.filter(h => h.accountId === acc.id);
+      const bal = items.reduce((s, h) => s + h.cValTRY, 0);
+      accountStats[acc.id] = {
+        balance: bal,
+        dailyGain: items.reduce((s, h) => s + h.dGainTRY, 0),
+        totalGain: items.reduce((s, h) => s + h.totalGainTRY, 0),
+        ratio: totalBalance > 0 ? (bal / totalBalance) * 100 : 0
+      };
+    });
+
+    const typeStats: Record<string, any> = {};
+    const grouped = detailedAll.filter(h => {
+      const acc = accounts.find(a => a.id === h.accountId);
+      return acc?.isIncluded !== false;
+    }).reduce((acc, h) => {
+      const effectiveType = h.symbol?.toUpperCase() === 'AVB' ? 'BEFAS' : h.assetType;
+      if (!acc[effectiveType]) acc[effectiveType] = { items: [], balance: 0, dailyGain: 0, totalGain: 0 };
       
+      // Konsolidasyon Mantığı
+      const existing = acc[effectiveType].items.find((i: any) => i.symbol === h.symbol);
+      if (existing) {
+        existing.amount += h.amount;
+        existing.currentValue += h.currentValue;
+        existing.cValTRY += h.cValTRY;
+        existing.dailyGain += h.dailyGain;
+        existing.totalGain += h.totalGain;
+        existing.dGainTRY += h.dGainTRY;
+        existing.totalGainTRY += h.totalGainTRY;
+        
+        // Birleşik değerler üzerinden yüzdeleri tekrar hesapla
+        const dBasis = existing.cValTRY - existing.dGainTRY;
+        const tBasis = existing.cValTRY - existing.totalGainTRY;
+        existing.dailyGainPercent = dBasis !== 0 ? (existing.dGainTRY / dBasis) * 100 : 0;
+        existing.totalGainPercent = tBasis !== 0 ? (existing.totalGainTRY / tBasis) * 100 : 0;
+      } else {
+        acc[effectiveType].items.push({ ...h });
+      }
+
+      acc[effectiveType].balance += h.cValTRY;
+      acc[effectiveType].dailyGain += h.dGainTRY;
+      acc[effectiveType].totalGain += h.totalGainTRY;
       return acc;
-    }, {} as Record<string, { balance: number, dailyGain: number, totalGain: number, items: any[] }>);
+    }, {} as Record<string, any>);
 
-    const totalBalance = visibleAccounts.reduce((sum, acc) => sum + (accountStats[acc.id]?.balance || 0), 0);
-    const dailyGain = visibleAccounts.reduce((sum, acc) => sum + (accountStats[acc.id]?.dailyGain || 0), 0);
-    const totalGain = visibleAccounts.reduce((sum, acc) => sum + (accountStats[acc.id]?.totalGain || 0), 0);
-    
-    const dailyGainPercent = totalBalance > 0 ? (dailyGain / totalBalance) * 100 : 0;
-    const totalGainPercent = (totalBalance - totalGain) > 0 ? (totalGain / (totalBalance - totalGain)) * 100 : 0;
+    Object.keys(grouped).forEach(t => {
+      typeStats[t] = { 
+        ...grouped[t], 
+        ratio: totalBalance > 0 ? (grouped[t].balance / totalBalance) * 100 : 0 
+      };
+    });
 
-    return {
-      accountStats,
-      typeStats,
-      totalBalance,
-      dailyGain,
-      dailyGainPercent,
-      totalGain,
-      totalGainPercent,
-      assetCount: portfolioHoldings.length,
-      accountCount: visibleAccounts.length
-    };
-  }, [accounts, portfolioHoldings]);
+    return { totalBalance, dailyGain, dailyGainPercent: totalBalance > 0 ? (dailyGain/totalBalance)*100 : 0, totalGain, totalGainPercent: (totalBalance-totalGain) > 0 ? (totalGain/(totalBalance-totalGain))*100 : 0, accountStats, typeStats, detailedAll };
+  }, [portfolioHoldings, accounts, rates]);
+
+  if (portfolioHoldings.length === 0) return <div className="text-center p-20 text-zinc-500">Portföy boş.</div>;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      {/* Header Summary Card */}
-      <div className="relative overflow-hidden bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 shadow-2xl">
-        {/* Abstract background glow */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] rounded-full -mr-20 -mt-20"></div>
-        
-        <div className="relative">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-zinc-500 text-sm font-medium tracking-widest uppercase">
-                <Wallet size={16} className="text-emerald-500" />
-                PORTFÖY DEĞERİ
-              </div>
-              <h1 className="text-5xl md:text-6xl font-bold text-white tracking-tighter">
-                {formatCurrency(stats.totalBalance)}
-              </h1>
-            </div>
-            
-            <div className="flex flex-wrap gap-3">
-              <div className="bg-zinc-800/50 backdrop-blur-md border border-zinc-700/50 rounded-2xl px-5 py-3">
-                <div className="text-zinc-500 text-[10px] font-bold tracking-widest uppercase mb-1">VARLIK</div>
-                <div className="text-white font-bold">{stats.assetCount}</div>
-              </div>
-              <div className="bg-zinc-800/50 backdrop-blur-md border border-zinc-700/50 rounded-2xl px-5 py-3">
-                <div className="text-zinc-500 text-[10px] font-bold tracking-widest uppercase mb-1">HESAP</div>
-                <div className="text-white font-bold">{stats.accountCount}</div>
-              </div>
-              <button 
-                onClick={handleManualSync}
-                disabled={isUpdating}
-                className="group flex flex-col items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-black rounded-2xl px-5 py-3 transition-all duration-300 disabled:opacity-50"
-              >
-                <div className="text-[10px] font-black tracking-widest uppercase mb-0.5">YENİLE</div>
-                <RefreshCcw size={16} className={`${isUpdating ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
-              </button>
-            </div>
-          </div>
+    <div className="max-w-[1600px] mx-auto pb-20 px-4 md:px-8 space-y-12">
+      <PortfolioStats {...stats} />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className={`p-6 rounded-3xl border transition-all duration-300 ${
-              stats.dailyGain >= 0 
-                ? 'bg-emerald-500/5 border-emerald-500/10 hover:bg-emerald-500/10' 
-                : 'bg-rose-500/5 border-rose-500/10 hover:bg-rose-500/10'
-            }`}>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-zinc-500 text-xs font-bold tracking-widest uppercase">GÜNLÜK KALIM</span>
-                {stats.dailyGain >= 0 ? <TrendingUp size={20} className="text-emerald-500" /> : <TrendingDown size={20} className="text-rose-500" />}
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className={`text-2xl font-bold ${stats.dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {stats.dailyGain >= 0 ? '+' : ''}{formatCurrency(stats.dailyGain)}
-                </span>
-                <span className={`text-base font-medium ${stats.dailyGain >= 0 ? 'text-emerald-500/70' : 'text-rose-500/70'}`}>
-                  {stats.dailyGain >= 0 ? '+' : ''}{stats.dailyGainPercent.toFixed(2)}%
-                </span>
-              </div>
-            </div>
-
-            <div className={`p-6 rounded-3xl border transition-all duration-300 ${
-              stats.totalGain >= 0 
-                ? 'bg-emerald-500/5 border-emerald-500/10 hover:bg-emerald-500/10' 
-                : 'bg-rose-500/5 border-rose-500/10 hover:bg-rose-500/10'
-            }`}>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-zinc-500 text-xs font-bold tracking-widest uppercase">TOPLAM KAZANÇ</span>
-                {stats.totalGain >= 0 ? <TrendingUp size={20} className="text-emerald-500" /> : <TrendingDown size={20} className="text-rose-500" />}
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className={`text-2xl font-bold ${stats.totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {stats.totalGain >= 0 ? '+' : ''}{formatCurrency(stats.totalGain)}
-                </span>
-                <span className={`text-base font-medium ${stats.totalGain >= 0 ? 'text-emerald-500/70' : 'text-rose-500/70'}`}>
-                  {stats.totalGain >= 0 ? '+' : ''}{stats.totalGainPercent.toFixed(2)}%
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Areas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Accounts List */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between px-2">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Plus size={20} className="text-emerald-500" />
-              Hesaplar
-            </h2>
-            <div className="flex items-center gap-4">
-              <span className="text-zinc-500 text-xs font-medium uppercase tracking-widest">
-                TEMİZLE
-              </span>
-            </div>
-          </div>
-
-          <div className="grid gap-4">
-            {accounts.map(account => {
-              const accountStat = stats.accountStats[account.id];
-              return (
-                <div 
-                  key={account.id}
-                  className={`group relative bg-zinc-900 border transition-all duration-500 rounded-[2rem] overflow-hidden ${
-                    account.isIncluded ? 'border-zinc-800' : 'border-zinc-900 opacity-60'
-                  }`}
-                >
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-6">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <h3 className="text-2xl font-bold text-white tracking-tight uppercase group-hover:text-emerald-500 transition-colors">
-                            {account.name}
-                          </h3>
-                          <div className="flex gap-2">
-                            <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-400 text-[10px] font-bold uppercase tracking-wider">
-                              {accountStat?.assetCount || 0} VRLK
-                            </span>
-                            <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] font-bold">
-                              %{stats.totalBalance > 0 ? (((accountStat?.balance || 0) / stats.totalBalance) * 100).toFixed(1) : '0.0'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => toggleAccount(account.id)}
-                        className="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500"
-                      >
-                        {expandedAccounts[account.id] ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                      </button>
-                    </div>
-
-                    <div className="flex justify-between items-center mb-6">
-                      <div className="flex flex-col">
-                        <span className="text-zinc-500 text-xs font-medium mb-1 tracking-wider uppercase">GÜNLÜK</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-sm font-bold ${(accountStat?.dailyGain || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                            {(accountStat?.dailyGain || 0) >= 0 ? '+' : ''}{formatCurrency(accountStat?.dailyGain || 0)}
-                          </span>
-                          <span className={`text-xs ${(accountStat?.dailyGain || 0) >= 0 ? 'text-emerald-500/80' : 'text-rose-500/80'}`}>
-                            ({(accountStat?.dailyGainPercent || 0) >= 0 ? '+' : ''}{(accountStat?.dailyGainPercent || 0).toFixed(1)}%)
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <span className="text-zinc-500 text-xs font-medium mb-1 tracking-wider uppercase">TOPLAM KAZANÇ</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-sm font-bold ${(accountStat?.totalGain || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                            {(accountStat?.totalGain || 0) >= 0 ? '+' : ''}{formatCurrency(accountStat?.totalGain || 0)}
-                          </span>
-                          <span className={`text-xs ${(accountStat?.totalGain || 0) >= 0 ? 'text-emerald-500/80' : 'text-rose-500/80'}`}>
-                            ({(accountStat?.totalGainPercent || 0) >= 0 ? '+' : ''}{(accountStat?.totalGainPercent || 0).toFixed(1)}%)
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-end mt-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => toggleAccountInclusion(account.id, !account.isIncluded)}
-                          className={`p-2 rounded-xl transition-all duration-300 ${
-                            account.isIncluded 
-                              ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
-                              : 'bg-zinc-500/10 text-zinc-500 border border-zinc-500/20'
-                          }`}
-                        >
-                          {account.isIncluded ? <Eye size={18} /> : <EyeOff size={18} />}
-                        </button>
-                        <button
-                          onClick={() => removeAccount(account.id)}
-                          className="p-2 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 transition-all duration-300 hover:bg-rose-500/20"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                      <div className="text-3xl font-bold text-white tracking-tighter">
-                        {formatCurrency(accountStat?.balance || 0)}
-                      </div>
-                    </div>
+      {/* HESAPLAR */}
+      <div className="space-y-6">
+        <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] px-4">Hesaplar</h2>
+        <div className="space-y-4">
+          {[...accounts]
+            .sort((a, b) => {
+              const isIncA = a.isIncluded !== false;
+              const isIncB = b.isIncluded !== false;
+              if (isIncA && !isIncB) return -1;
+              if (!isIncA && isIncB) return 1;
+              return (stats.accountStats[b.id]?.balance || 0) - (stats.accountStats[a.id]?.balance || 0);
+            })
+            .map((acc, index) => {
+            const s = stats.accountStats[acc.id];
+            const isExp = expandedAccounts.has(acc.id);
+            const isInc = acc.isIncluded !== false;
+            const isAlternate = index % 2 === 1;
+            return (
+              <div key={acc.id} className={`${isAlternate ? 'bg-zinc-900/40' : 'bg-zinc-900'} border border-zinc-800 rounded-[2rem] overflow-hidden transition-all duration-300 ${!isInc ? 'opacity-40 grayscale' : ''}`}>
+                <div className="w-full flex items-center p-7 gap-4">
+                  <div className="flex flex-col items-center gap-0.5 min-w-[32px]">
+                    <button onClick={() => toggleAccountInclusion(acc.id, !isInc)} className={`p-1.5 transition-colors ${isInc ? 'text-zinc-500 hover:text-blue-500' : 'text-zinc-700 hover:text-zinc-400'}`}>
+                      {isInc ? <Eye size={16} /> : <EyeOff size={16} />}
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteModal({
+                          isOpen: true,
+                          type: 'account',
+                          id: acc.id,
+                          name: acc.name
+                        });
+                      }}
+                      className="p-1.5 text-rose-500/30 hover:text-rose-500 transition-colors"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
-
-                  {/* Expanded Assets */}
-                  {expandedAccounts[account.id] && (
-                    <div className="border-t border-zinc-800/50 bg-zinc-900/50 p-4 space-y-3">
-                      {portfolioHoldings.filter(h => h.accountId === account.id).map(asset => {
-                        const currentValue = asset.amount * (asset.currentPrice || asset.purchasePrice);
-                        const purchaseValue = asset.amount * asset.purchasePrice;
-                        const totalGain = currentValue - purchaseValue;
-                        const totalGainPercent = purchaseValue > 0 ? (totalGain / purchaseValue) * 100 : 0;
-
+                  <button onClick={() => toggleAccount(acc.id)} className="flex-1 grid grid-cols-2 md:grid-cols-5 items-center text-left gap-4 hover:bg-zinc-800/10 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <ChevronRight size={18} className={`text-zinc-500 transition-transform ${isExp ? 'rotate-90' : ''}`} />
+                      <span className="text-xl font-black text-white italic uppercase truncate">{acc.name}</span>
+                    </div>
+                    <div className="text-left md:text-center">
+                      <span className="block text-[10px] font-bold text-zinc-600 tracking-widest uppercase mb-1.5">ORAN</span>
+                      <span className="text-xl font-black text-blue-400 font-mono tracking-tighter">%{s.ratio.toFixed(1)}</span>
+                    </div>
+                    <div className="text-left md:text-center">
+                      <span className="block text-[10px] font-bold text-zinc-600 tracking-widest uppercase mb-1.5">GÜNLÜK</span>
+                      <span className={`text-xl font-black font-mono tracking-tighter ${s.dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{formatCurrency(s.dailyGain)}</span>
+                    </div>
+                    <div className="text-left md:text-center">
+                      <span className="block text-[10px] font-bold text-zinc-600 tracking-widest uppercase mb-1.5">TOPLAM</span>
+                      <span className={`text-xl font-black font-mono tracking-tighter ${s.totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{formatCurrency(s.totalGain)}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="block text-[10px] font-bold text-zinc-600 tracking-widest uppercase mb-1.5">DEĞER</span>
+                      <span className="text-2xl font-black text-white tracking-tighter">{formatCurrency(s.balance)}</span>
+                    </div>
+                  </button>
+                </div>
+                {isExp && (
+                  <div className="px-8 pb-8 animate-in slide-in-from-top-4 duration-300">
+                    <div className="pt-8 border-t border-zinc-800 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {stats.detailedAll.filter(h => h.accountId === acc.id).map((asset: any, idx: number) => {
+                        const accStats = stats.accountStats[acc.id];
+                        const groupRatio = accStats.balance > 0 ? (asset.cValTRY / accStats.balance) * 100 : 0;
                         return (
-                          <div key={asset.id} className="bg-zinc-800/30 rounded-2xl p-4 border border-zinc-800/50 hover:bg-zinc-800/50 transition-colors">
-                            <div className="flex items-center justify-between mb-4">
-                              <div className="flex items-center gap-3">
-                                <div className="bg-zinc-800 rounded-lg p-2 text-xs font-black text-white px-3">
-                                  {asset.symbol}
-                                </div>
-                                <div className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-wider">
-                                  {asset.assetType}
-                                </div>
-                                <div className="text-xs text-zinc-400 font-medium">
-                                  {asset.amount.toLocaleString('tr-TR')} ADET
-                                </div>
-                              </div>
-                              <button 
-                                onClick={() => removeAsset(asset.id)}
-                                className="p-1.5 text-zinc-600 hover:text-rose-500 transition-colors"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                            <div className="flex justify-between items-end">
-                              <div className="flex flex-col">
-                                <div className="text-xs text-zinc-500 uppercase tracking-widest font-bold mb-1">DEĞER</div>
-                                <div className="text-xl font-bold text-white tracking-tight">
-                                  {formatCurrency(currentValue)}
-                                </div>
-                              </div>
-                              <div className="flex flex-col items-end">
-                                <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">DEĞİŞİM</div>
-                                <div className={`text-sm font-bold ${totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                  {totalGain >= 0 ? '+' : ''}{formatPercent(totalGainPercent)}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                          <AssetDetailCard 
+                            key={asset.id} 
+                            asset={asset} 
+                            rates={rates} 
+                            isAlternate={idx % 2 === 1}
+                            groupRatio={groupRatio}
+                            onRemove={(id) => setDeleteModal({
+                              isOpen: true,
+                              type: 'asset',
+                              id,
+                              name: asset.symbol.replace('.IS', '')
+                            })} 
+                          />
                         );
                       })}
+                    </div>
                   </div>
                 )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Portfolio Insights / Performance Chart Placeholder */}
-        <div className="space-y-6">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2 px-2">
-            <TrendingUp size={20} className="text-emerald-500" />
-            Varlık Detayları
-          </h2>
-
-          <div className="space-y-8">
-            {Object.entries(stats.typeStats).map(([type, data]) => (
-              <div key={type} className="space-y-4">
-                <div className="flex items-center justify-between px-2">
-                  <h3 className="text-zinc-500 text-xs font-black tracking-[0.3em] uppercase flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${
-                      type === 'BIST' ? 'bg-emerald-500' :
-                      type === 'FON' || type === 'TEFAS' || type === 'BEFAS' ? 'bg-blue-500' :
-                      type === 'KRIPTO' || type === 'CRYPTO' ? 'bg-orange-500' : 'bg-zinc-500'
-                    }`} />
-                    {type === 'BIST' ? 'HİSSE SENETLERİ' :
-                     type === 'US' ? 'ABD BORSASI' :
-                     type === 'KRIPTO' || type === 'CRYPTO' ? 'KRİPTO VARLIKLAR' :
-                     type === 'TEFAS' || type === 'BEFAS' ? 'YATIRIM FONLARI' : type}
-                  </h3>
-                  <span className="text-white font-bold text-sm">
-                    {formatCurrency(data.balance)}
-                  </span>
-                </div>
-
-                <div className="grid gap-4">
-                  {data.items.map((asset) => (
-                    <div 
-                      key={asset.id}
-                      className="group bg-zinc-900 border border-zinc-800 rounded-[2rem] p-6 hover:border-emerald-500/20 transition-all duration-300"
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl font-black text-white tracking-widest uppercase">
-                            {asset.symbol}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-400 text-[10px] font-bold uppercase tracking-wider">
-                            {asset.amount.toLocaleString('tr-TR')} ADET
-                          </span>
-                          {asset.totalGainPercent !== 0 && (
-                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${asset.totalGain >= 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
-                              %{asset.totalGainPercent.toFixed(1)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[10px] font-bold text-zinc-600 bg-zinc-800/30 px-2 py-1 rounded-md uppercase tracking-widest">
-                          {asset.accountName || 'HESAP'}
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between items-center mb-4">
-                        <div className="flex flex-col">
-                          <div className="flex items-baseline gap-2 mb-1">
-                            <span className="text-xl font-medium text-white">
-                              {formatCurrency(asset.currentPrice || asset.purchasePrice)}
-                            </span>
-                            <div className="flex flex-col">
-                              <span className={`text-sm font-bold flex items-center ${asset.dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                {asset.dailyGain >= 0 ? '+' : ''}{formatCurrency(asset.dailyGain)}
-                              </span>
-                              <span className={`text-[10px] ${asset.dailyGain >= 0 ? 'text-emerald-500/60' : 'text-rose-500/60'}`}>
-                                ({asset.dailyGainPercent >= 0 ? '+' : ''}{asset.dailyGainPercent.toFixed(1)}%)
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end">
-                          <div className="flex items-baseline gap-2">
-                             <span className={`text-xl font-bold ${asset.totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                              {asset.totalGain >= 0 ? '+' : ''}{formatCurrency(asset.totalGain)}
-                            </span>
-                          </div>
-                          <span className={`text-[10px] ${asset.totalGain >= 0 ? 'text-emerald-500/60' : 'text-rose-500/60'}`}>
-                            ({asset.totalGainPercent >= 0 ? '+' : ''}{asset.totalGainPercent.toFixed(1)}%)
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-end items-end pt-4 border-t border-zinc-800/50">
-                        <div className="text-3xl font-bold text-white tracking-tighter">
-                          {formatCurrency(asset.currentValue)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
+
+      {/* VARLIKLAR */}
+      <div className="space-y-6">
+        <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] px-4">Varlık Dağılımı</h2>
+        <div className="space-y-4">
+          {Object.entries(stats.typeStats)
+            .sort(([, a], [, b]) => b.balance - a.balance)
+            .map(([type, s], index) => {
+            const isExp = expandedTypes.has(type);
+            const isAlternate = index % 2 === 1;
+            const trNames:any = { 'FOREIGN_CURRENCY':'DÖVİZ','CRYPTO':'KRİPTO','US':'ABD HİSSE','BIST':'BIST','FUND':'FON','COMMODITY':'EMTİA','BEFAS':'BEFAS' };
+            return (
+              <div key={type} className={`${isAlternate ? 'bg-zinc-900/40' : 'bg-zinc-900'} border border-zinc-800 rounded-[2rem] overflow-hidden transition-colors`}>
+                <button onClick={() => toggleType(type)} className="w-full grid grid-cols-2 md:grid-cols-5 items-center p-7 text-left gap-4 hover:bg-zinc-800/30 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <ChevronRight size={18} className={`text-zinc-500 transition-transform ${isExp ? 'rotate-90' : ''}`} />
+                    <span className="text-2xl font-black text-white italic uppercase truncate">{trNames[type] || type}</span>
+                  </div>
+                  <div className="text-left md:text-center">
+                    <span className="block text-[10px] font-bold text-zinc-600 tracking-widest uppercase mb-1.5">ORAN</span>
+                    <span className="text-xl font-black text-blue-400 font-mono tracking-tighter">%{s.ratio.toFixed(1)}</span>
+                  </div>
+                  <div className="text-left md:text-center">
+                    <span className="block text-[10px] font-bold text-zinc-600 tracking-widest uppercase mb-1.5">GÜNLÜK</span>
+                    <span className={`text-xl font-black font-mono tracking-tighter ${s.dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{formatCurrency(s.dailyGain)}</span>
+                  </div>
+                  <div className="text-left md:text-center">
+                    <span className="block text-[10px] font-bold text-zinc-600 tracking-widest uppercase mb-1.5">TOPLAM</span>
+                    <span className={`text-xl font-black font-mono tracking-tighter ${s.totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{formatCurrency(s.totalGain)}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="block text-[10px] font-bold text-zinc-600 tracking-widest uppercase mb-1.5">DEĞER</span>
+                    <span className="text-2xl font-black text-white tracking-tighter">{formatCurrency(s.balance)}</span>
+                  </div>
+                </button>
+                {isExp && (
+                  <div className="px-8 pb-8 animate-in slide-in-from-top-4 duration-300">
+                    <div className="pt-8 border-t border-zinc-800 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {s.items.map((asset:any, idx:number) => {
+                        const groupRatio = s.balance > 0 ? (asset.cValTRY / s.balance) * 100 : 0;
+                        return (
+                          <AssetDetailCard 
+                            key={asset.id} 
+                            asset={asset} 
+                            rates={rates} 
+                            isAlternate={idx % 2 === 1}
+                            groupRatio={groupRatio}
+                            onRemove={(id) => setDeleteModal({
+                              isOpen: true,
+                              type: 'asset',
+                              id,
+                              name: asset.symbol.replace('.IS', '')
+                            })} 
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
+        onConfirm={() => {
+          if (deleteModal.type === 'account') removeAccount(deleteModal.id);
+          else removePortfolioItem(deleteModal.id);
+        }}
+        title={deleteModal.type === 'account' ? 'Hesabı Sil' : 'Varlığı Sil'}
+        message={`${deleteModal.name} ${deleteModal.type === 'account' ? 'hesabını' : 'varlığını'} ve bağlı tüm verileri silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`}
+        confirmText={deleteModal.type === 'account' ? 'Hesabı Sil' : 'Varlığı Sil'}
+        cancelText="Vazgeç"
+      />
     </div>
   );
-}
+};
+
+export default PortfolioOverview;
