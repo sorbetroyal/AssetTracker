@@ -3,15 +3,17 @@
 import React, { useMemo, useState } from 'react';
 import { useAssetStore } from '@/store/useAssetStore';
 import { formatCurrency } from '@/lib/formatters';
-import { ChevronRight, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { ChevronRight, Eye, EyeOff, Trash2, Plus } from 'lucide-react';
 import { PortfolioStats } from './portfolio/PortfolioStats';
 import { AssetDetailCard } from './portfolio/AssetDetailCard';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { AddAssetModal } from './AddAssetModal';
 
 const PortfolioOverview = () => {
   const { portfolioHoldings, accounts, removeAsset, rates, toggleAccountInclusion, removeAccount, removePortfolioItem } = useAssetStore();
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
-  const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set(['BIST']));
+  const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set());
+  const [addModalConfig, setAddModalConfig] = useState<{ isOpen: boolean; type: string }>({ isOpen: false, type: 'BIST' });
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; type: 'account' | 'asset'; id: string; name: string }>({
     isOpen: false,
     type: 'account',
@@ -149,7 +151,16 @@ const PortfolioOverview = () => {
       {/* HESAPLAR */}
       {expandedTypes.size === 0 && (
         <div className="space-y-6">
-          <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] px-4">Hesaplar</h2>
+          <div className="flex items-center justify-between px-4">
+            <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em]">Hesaplar</h2>
+            <button 
+              onClick={() => setAddModalConfig({ isOpen: true, type: 'BANK' })}
+              className="flex items-center gap-2 px-5 py-2 bg-zinc-900/50 hover:bg-white text-zinc-400 hover:text-black border border-white/5 rounded-full text-[10px] font-black uppercase tracking-tighter transition-all active:scale-95"
+            >
+              <Plus size={14} />
+              HESAP EKLE
+            </button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...accounts]
               .sort((a, b) => {
@@ -256,7 +267,16 @@ const PortfolioOverview = () => {
       {/* VARLIK DAĞILIMI */}
       {expandedAccounts.size === 0 && (
         <div className="space-y-6">
-          <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] px-4">Varlık Dağılımı</h2>
+          <div className="flex items-center justify-between px-4">
+            <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em]">Varlık Dağılımı</h2>
+            <button 
+              onClick={() => setAddModalConfig({ isOpen: true, type: 'BIST' })}
+              className="flex items-center gap-2 px-5 py-2 bg-zinc-900/50 hover:bg-white text-zinc-400 hover:text-black border border-white/5 rounded-full text-[10px] font-black uppercase tracking-tighter transition-all active:scale-95"
+            >
+              <Plus size={14} />
+              VARLIK EKLE
+            </button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Object.entries(stats.typeStats)
               .sort(([, a], [, b]) => b.balance - a.balance)
@@ -336,6 +356,13 @@ const PortfolioOverview = () => {
           </div>
         </div>
       )}
+
+      <AddAssetModal 
+        isOpen={addModalConfig.isOpen} 
+        onClose={() => setAddModalConfig({ ...addModalConfig, isOpen: false })} 
+        initialType={addModalConfig.type as any}
+        isPortfolio={true}
+      />
 
       <ConfirmationModal
         isOpen={deleteModal.isOpen}
