@@ -59,6 +59,7 @@ interface AssetStore {
   triggerRefresh: () => void;
   setLastUpdated: (time: string) => void;
   setIsUpdating: (val: boolean) => void;
+  syncFunds: () => Promise<void>;
   setIndices: (indices: Record<string, any>) => void;
   updateRates: (rates: { USD: number }) => void;
   updateIndices: (symbol: string, data: { price: number; change: number; name: string }) => void;
@@ -103,6 +104,20 @@ export const useAssetStore = create<AssetStore>()(
       triggerRefresh: () => set((state) => ({ refreshCount: state.refreshCount + 1 })),
       setLastUpdated: (time) => set({ lastUpdated: time }),
       setIsUpdating: (val) => set({ isUpdating: val }),
+      syncFunds: async () => {
+        set({ isUpdating: true });
+        try {
+          const res = await fetch('/api/sync', { method: 'POST' });
+          if (!res.ok) throw new Error('Sync failed');
+          const data = await res.json();
+          console.log('[Store] Sync Success:', data);
+          get().triggerRefresh(); // Veritabanı güncellendi, şimdi frontend yenilesin
+        } catch (err) {
+          console.error('[Store] Sync Error:', err);
+        } finally {
+          set({ isUpdating: false });
+        }
+      },
       setIndices: (indices) => set({ indices }),
       updateRates: (rates) => set({ rates }),
       

@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "python tefas-api/sync_job.py && next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync": "python tefas-api/sync_job.py"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.3",

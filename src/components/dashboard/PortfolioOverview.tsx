@@ -104,6 +104,20 @@ export function PortfolioOverview() {
         <SummaryCard label="Toplam Maliyet" value={`₺${totalStats.totalCost.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} icon={<Landmark size={14} className="text-amber-500" />} />
       </div>
 
+      {/* SENKRONİZASYON BİLGİSİ */}
+      <div className="flex items-center gap-4 px-1 -mt-2">
+        <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full">
+          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+          <span className="text-[10px] font-black tracking-widest text-emerald-500 uppercase">
+            Veritabanı Yayında
+          </span>
+        </div>
+        <div className="flex-1 h-[1px] bg-white/5" />
+        <div className="text-[10px] font-bold text-zinc-500 flex items-center gap-2 tracking-wider">
+          Fiyatlar en son {new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })} itibarıyla güncel
+        </div>
+      </div>
+
       <div className="flex flex-col gap-12">
         {/* HESAPLAR */}
         <SectionWrapper 

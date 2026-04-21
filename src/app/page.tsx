@@ -15,7 +15,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export default function Home() {
-  const { fetchAssets, fetchAccounts, fetchPortfolio, isUpdating, lastUpdated, triggerRefresh } = useAssetStore();
+  const { fetchAssets, fetchAccounts, fetchPortfolio, isUpdating, lastUpdated, syncFunds } = useAssetStore();
   const [activeTab, setActiveTab] = useState<'terminal' | 'portfolio'>('terminal');
 
   // Başlangıçta verileri Supabase'den çek
@@ -36,7 +36,7 @@ export default function Home() {
           {/* Güncelleme Çubuğu */}
           <div className="flex items-center gap-3">
             <button 
-              onClick={() => triggerRefresh()}
+              onClick={() => syncFunds()}
               disabled={isUpdating}
               className={cn(
                 "px-4 py-2 border border-white/10 rounded-full text-xs font-black text-zinc-300 hover:text-white transition-all uppercase tracking-widest flex items-center gap-2 active:scale-95 shadow-lg",

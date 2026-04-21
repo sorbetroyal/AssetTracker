@@ -3,7 +3,7 @@ import sys
 from dotenv import load_dotenv
 from supabase import create_client, Client
 import borsapy as bp
-from datetime import datetime
+from datetime import datetime, timezone
 import time
 
 # Root directory içindeki .env.local dosyasını bul ve yükle
@@ -40,7 +40,7 @@ def get_fund_price_from_borsapy(symbol: str) -> dict:
         return None
 
 def sync_asset_prices():
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Baslatiliyor: Supabase uzerinden portfoy fonlari araniyor...")
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Başlatılıyor: Supabase üzerinden portföy fonları aranıyor...")
     
     fund_symbols = set()
     
@@ -49,6 +49,7 @@ def sync_asset_prices():
         res_portfolio = supabase.table('portfolio').select('symbol, asset_type').in_('asset_type', ['TEFAS', 'BEFAS']).execute()
         for item in res_portfolio.data:
             fund_symbols.add(item['symbol'].strip().upper())
+            print(f"Portföyden eklendi: {item['symbol']}")
     except Exception as e:
         print(f"Portfolio fetch error: {e}")
         
@@ -57,41 +58,43 @@ def sync_asset_prices():
         res_assets = supabase.table('assets').select('symbol, type').in_('type', ['TEFAS', 'BEFAS']).execute()
         for item in res_assets.data:
             fund_symbols.add(item['symbol'].strip().upper())
+            print(f"Takip listesinden eklendi: {item['symbol']}")
     except Exception as e:
         print(f"Assets fetch error: {e}")
         
     if not fund_symbols:
-        print("Supabase veritabaninizda TEFAS veya BEFAS fon kaydi bulunamadi! (Portfoy veya Takip bos)")
+        print("Supabase veritabanınızda TEFAS veya BEFAS fon kaydı bulunamadı!")
         return
         
-    print(f"[{len(fund_symbols)}] adet farkli TEFAS/BEFAS fonu saptandi: {', '.join(fund_symbols)}")
-    print("Fiyatlar TEFAS (borsapy) uzerinden guncelleniyor...")
+    print(f"[{len(fund_symbols)}] adet farklı fon saptandı: {', '.join(fund_symbols)}")
     
     successful_updates = 0
-    now = datetime.now().isoformat()
+    # UTC ISO format (Supabase için en güvenlisi)
+    now = datetime.now(timezone.utc).isoformat()
 
     for symbol in fund_symbols:
+        print(f"İşleniyor: {symbol}...", end="\r")
         data = get_fund_price_from_borsapy(symbol)
         if data and data['price'] > 0:
             upsert_data = {
                 "symbol": symbol,
                 "price": data['price'],
                 "daily_change": data['daily_change'],
-                "source": data['source'],
+                "source": "borsapy_local",
                 "updated_at": now
             }
             try:
-                # Upsert islemi: Varsa guncelle, yoksa ekle
                 res = supabase.table('asset_prices').upsert(upsert_data).execute()
-                print(f"[OK] {symbol} -> {data['price']} TL (%{data['daily_change']})")
+                print(f"[OK] {symbol}: {data['price']} TL (%{data['daily_change']})")
                 successful_updates += 1
             except Exception as e:
-                print(f"[FAIL] {symbol} Supabase Update Error: {e}")
+                print(f"[FAIL] {symbol} Supabase Hatası: {e}")
+        else:
+            print(f"[ERROR] {symbol} verisi çekilemedi.")
                 
-        # API siniri asmamak veya ban yememek icin minimal uyku beklemesi
-        time.sleep(0.5)
+        time.sleep(0.4)
 
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Islem Tamamlandi! {successful_updates}/{len(fund_symbols)} fon veritabanina yazildi.")
+    print(f"\n[{datetime.now().strftime('%H:%M:%S')}] İşlem Tamamlandı! {successful_updates}/{len(fund_symbols)} fon güncellendi.")
 
 if __name__ == "__main__":
     sync_asset_prices()
